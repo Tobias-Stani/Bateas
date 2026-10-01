@@ -13,6 +13,12 @@ services:
       # app de Discogs (opcionales: sin ellas el admin no muestra la conexión)
       DISCOGS_KEY: ${DISCOGS_KEY:-}
       DISCOGS_SECRET: ${DISCOGS_SECRET:-}
+      # app de Mercado Pago (opcionales: sin ellas no hay pagos online)
+      MP_CLIENT_ID: ${MP_CLIENT_ID:-}
+      MP_CLIENT_SECRET: ${MP_CLIENT_SECRET:-}
+      MP_FEE_PERCENT: ${MP_FEE_PERCENT:-0}
+      MP_TEST: ${MP_TEST:-}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}  # solo desarrollo: sin OAuth ni comisión
     volumes:
       - ./backend:/app
       - data:/data

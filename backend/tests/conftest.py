@@ -14,6 +14,8 @@ os.environ["DATA_DIR"] = tempfile.mkdtemp(prefix="vinyl-tests-")
 os.environ["SUPER_PASSWORD"] = "s3cret"
 os.environ["STATIC_DIR"] = str(BACKEND.parent / "frontend" / "public")
 os.environ["DISCOGS_KEY"] = os.environ["DISCOGS_SECRET"] = ""  # los tests nunca hablan con Discogs
+for var in ("MP_CLIENT_ID", "MP_CLIENT_SECRET", "MP_ACCESS_TOKEN", "MP_TEST"):
+    os.environ[var] = ""  # ni con Mercado Pago
 sys.path.insert(0, str(BACKEND))
 
 from app.main import app as APP  # noqa: E402

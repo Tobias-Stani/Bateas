@@ -218,6 +218,15 @@ def search(t, q="", media="", genre="", page=1, per_page=PAGE_SIZE):
     return {"total": count, "items": items, "page_size": per_page}
 
 
+def by_ids(t, ids):
+    if not exists(t) or not ids:
+        return []
+    con = db(t)
+    rows = [disc(r) for r in con.execute(f"SELECT * FROM discos WHERE id IN ({', '.join('?' * len(ids))})", list(ids))]
+    con.close()
+    return rows
+
+
 def filters(t):
     if not exists(t):
         return {"media": [], "genre": []}

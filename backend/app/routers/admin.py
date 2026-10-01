@@ -7,7 +7,7 @@ from ..db import get_setting, set_settings
 from ..dependencies import require_admin, tenant
 from ..schemas import Contact, Message, Secret, Toggle
 from ..security import admin_token, check_password, clear_tenant_cookie, set_tenant_cookie
-from ..services import catalog, discogs, tenants
+from ..services import catalog, discogs, mercadopago, tenants
 
 router = APIRouter(prefix="/api/t/{slug}/admin", tags=["admin"])
 
@@ -31,7 +31,8 @@ def status(t: dict = Depends(require_admin)):
     return {"client_code": tenants.client_code(t), "code_required": tenants.code_required(t), "whatsapp": tenants.whatsapp(t),
             **tenants.messages(t), "custom_columns": tenants.custom_columns(t), "contact": tenants.contact(t),
             "filename": get_setting(t, "filename"), "uploaded_at": get_setting(t, "uploaded_at"),
-            "closes_at": tenants.closes_at(t), "closed": tenants.is_closed(t), "discogs": discogs.status(t), **catalog.stats(t)}
+            "closes_at": tenants.closes_at(t), "closed": tenants.is_closed(t), "discogs": discogs.status(t),
+            "mercadopago": mercadopago.status(t), **catalog.stats(t)}
 
 
 @router.put("/code")

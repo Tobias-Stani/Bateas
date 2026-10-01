@@ -133,6 +133,9 @@
   .cart li small { color: var(--muted); display: block; }
   .cart .actions { display: grid; gap: 8px; }
   .cart .hint { margin-top: 12px; }
+  .cart .actions .hint { margin: 0; }
+  .btn-pay { background: #009ee3; border-color: #009ee3; }  /* celeste de Mercado Pago: el botón se reconoce de un vistazo */
+  .btn-pay:hover { background: #007eb5; border-color: #007eb5; }
 
   .price { display: block; font-weight: 800; font-size: 1.05rem; color: var(--ink); font-variant-numeric: tabular-nums; }
   .deadline { margin: -12px 0 24px; color: var(--highlight); font-weight: 700; }
@@ -231,6 +234,8 @@
         <ul id="cart-items"></ul>
         <p id="cart-empty" class="hint">Todavía no agregaste discos. Buscá lo que te interese y tocá <b>Agregar</b>.</p>
         <div class="actions">
+          <button id="pay" class="btn btn-pay" hidden>Pagar con Mercado Pago</button>
+          <p id="pay-note" class="hint" hidden></p>
           <button id="wa" class="btn btn-whatsapp">Consultar cotización</button>
           <button id="copy" class="btn btn-outline">Copiar lista</button>
           <button id="empty" class="btn-text danger">Vaciar pedido</button>
@@ -268,6 +273,14 @@ function renderCart() {
   $("count").textContent = $("count-bar").textContent = cart.length;
   $("cart-empty").hidden = cart.length > 0;
   $("wa").disabled = $("copy").disabled = !cart.length;
+  // pago online: solo si la disquería lo prendió y todos los discos tienen precio en pesos
+  const unpriced = cart.filter(d => !/^\d+(\.\d+)?$/.test(d.price || ""));
+  $("pay").hidden = !BRAND.payments;
+  $("pay").disabled = !cart.length || unpriced.length > 0;
+  $("pay-note").hidden = !BRAND.payments || !unpriced.length;
+  $("pay-note").textContent = unpriced.length === 1 ? `#${unpriced[0].id} no tiene precio: quitalo para pagar online, o consultá por WhatsApp.`
+    : `${unpriced.length} discos no tienen precio: quitalos para pagar online, o consultá por WhatsApp.`;
+  $("wa").textContent = BRAND.payments ? "Consultar por WhatsApp" : "Consultar cotización";
   $("empty").hidden = !cart.length;
   $("cart-items").innerHTML = cart.map((d, i) => `
     <li><span><span class="sticker">#${d.id}</span> <b>${esc(d.artist)}</b><small>${esc(d.title)}, ${esc(fmt(d))}${d.price ? ` · ${esc(fmtPrice(d.price))}` : ""}</small></span>
@@ -489,6 +502,7 @@ async function openStore() {
   renderCart();
   await loadHome();
   search();
+  paymentReturn();
 }
 
 $("login").onsubmit = async e => {
@@ -542,6 +556,35 @@ $("empty").onclick = async () => {
 $("wa").onclick = () => BRAND.whatsapp
   ? window.open(`https://wa.me/${BRAND.whatsapp}?text=${encodeURIComponent(message())}`, "_blank")
   : Swal.fire({ icon: "info", title: "Falta el WhatsApp de la disquería", text: "Usá Copiar lista y mandásela a la disquería." });
+$("pay").onclick = async e => {
+  setBusy(e.target, true, "Abriendo Mercado Pago…");
+  try { location.href = (await api("/api/pagar", { method: "POST", body: { ids: cart.map(d => d.id) } })).url; }
+  catch (err) {
+    setBusy(e.target, false);
+    if (err.status === 401 || err.status === 403) return lockOut(err);
+    Swal.fire({ icon: "error", title: "No se pudo iniciar el pago", text: err.message });
+  }
+};
+// vuelta desde Mercado Pago: /{slug}?pago=success|pending|failure&pedido=N&payment_id=...
+async function paymentReturn() {
+  const p = new URLSearchParams(location.search), result = p.get("pago"), order = p.get("pedido");
+  if (!result || !/^\d+$/.test(order || "")) return;
+  history.replaceState(null, "", location.pathname);
+  try {
+    const o = await api(`/api/pedidos/${order}?payment_id=${encodeURIComponent(p.get("payment_id") || "")}`);
+    if (o.status === "approved") {
+      cart = []; renderCart(); renderList(); renderSections();
+      Swal.fire({ icon: "success", title: `¡Pago aprobado! Pedido #${o.id}`, text: `Pagaste ${fmtPrice(String(o.total))} por ${o.items.length} ${o.items.length === 1 ? "disco" : "discos"}. La disquería ya tiene tu pedido.` });
+    } else if (["pending", "in_process", "authorized"].includes(o.status)) {
+      Swal.fire({ icon: "info", title: `Pedido #${o.id}: pago pendiente`, text: "Mercado Pago todavía está procesando el pago. Te avisa por mail cuando se acredite." });
+    } else {
+      Swal.fire({ icon: "error", title: "El pago no se completó", text: "Tu pedido sigue armado: podés intentar de nuevo o consultar por WhatsApp." });
+    }
+  } catch {
+    Swal.fire({ icon: "info", title: "No pudimos confirmar el pago", text: "Si Mercado Pago te lo cobró, la disquería lo va a ver igual. Ante cualquier duda, escribile." });
+  }
+}
+
 $("copy").onclick = async () => {
   try { await navigator.clipboard.writeText(message()); toast.fire({ icon: "success", title: "Lista copiada" }); }
   catch { toast.fire({ icon: "error", title: "No se pudo copiar. Usá el botón de WhatsApp." }); }

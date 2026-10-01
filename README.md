@@ -183,6 +183,10 @@ Los tests prueban la API desde afuera, con una base temporal: no tocan tus datos
 | `DATA_DIR` | ya configurada | Dónde viven las bases e imágenes (`/data`). |
 | `STATIC_DIR` | ya configurada en el `Dockerfile` | Producción: el backend también sirve el front. |
 | `SECRET_KEY` | opcional | Firma de cookies. Si falta, se genera una y queda en `/data/secret.key`. |
+| `MP_CLIENT_ID` / `MP_CLIENT_SECRET` | local (`.env`) y Railway, opcionales | La app de Bateas en Mercado Pago (Tus integraciones). Sin ellas, no hay pagos online. URL de redirección a registrar: `https://bateas-production.up.railway.app/api/mercadopago/callback`. |
+| `MP_FEE_PERCENT` | local y Railway | Comisión de Bateas sobre cada venta, en % (ej. `5`). Por defecto `0`. |
+| `MP_TEST` | solo para probar | `1` = usa las cuentas de prueba de Mercado Pago (sandbox). |
+| `MP_ACCESS_TOKEN` | solo desarrollo | Access Token de prueba de la app. Si no hay Client ID + Client Secret, todas las disquerías cobran con este token, sin OAuth y sin comisión. Nunca en producción. |
 | `DISCOGS_KEY` / `DISCOGS_SECRET` | local (`.env`) y Railway, opcionales | La app de Bateas en discogs.com/settings/developers. Sin ellas, el admin no muestra la conexión con Discogs. |
 
 ---
@@ -246,4 +250,4 @@ Antes de subir: tests en verde. Después: abrí la landing y `/super` para confi
 - [ ] Inicializar git y subir el repo (hoy el proyecto no tiene historial de versiones).
 - [ ] Separar el JavaScript de `admin.html` en módulos.
 - [ ] Backups periódicos del volumen de Railway.
-- [ ] (A futuro) Cobro con Mercado Pago, con comisión por venta.
+- [x] Cobro con Mercado Pago, con comisión por venta (falta crear la app y probarlo con cuentas de prueba).

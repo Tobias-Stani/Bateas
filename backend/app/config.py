@@ -14,6 +14,13 @@ STATIC_DIR = os.environ.get("STATIC_DIR", "")  # producción: el backend tambié
 # app registrada en discogs.com/settings/developers; vacías = sin conexión con Discogs
 DISCOGS_KEY = os.environ.get("DISCOGS_KEY", "")
 DISCOGS_SECRET = os.environ.get("DISCOGS_SECRET", "")
+# app de Mercado Pago (Tus integraciones); vacías = sin pagos online
+MP_CLIENT_ID = os.environ.get("MP_CLIENT_ID", "")
+MP_CLIENT_SECRET = os.environ.get("MP_CLIENT_SECRET", "")
+MP_FEE_PERCENT = float(os.environ.get("MP_FEE_PERCENT", "0"))  # comisión de Bateas sobre cada venta, en %
+MP_TEST = os.environ.get("MP_TEST", "") == "1"  # 1 = cuentas de prueba de Mercado Pago
+# solo desarrollo: un Access Token de prueba que usan todas las disquerías, sin OAuth (y sin comisión)
+MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 
 TENANTS.mkdir(parents=True, exist_ok=True)
 
@@ -58,6 +65,12 @@ DISCOGS_API = "https://api.discogs.com"
 DISCOGS_AUTHORIZE = "https://www.discogs.com/oauth/authorize"
 DISCOGS_AGENT = "Bateas/1.0 +https://bateas-production.up.railway.app"  # Discogs exige un User-Agent propio
 DISCOGS_PAGE = 100  # el máximo que deja la API
+
+# --- Mercado Pago ---
+MP_API = "https://api.mercadopago.com"
+MP_AUTHORIZE = "https://auth.mercadopago.com/authorization"
+MP_CURRENCY = "ARS"  # solo se cobran online los discos con precio en pesos
+MAX_ORDER = 100  # discos por pago
 
 # --- portada ---
 MAX_SECTIONS, MAX_SECTION_ITEMS = 20, 60

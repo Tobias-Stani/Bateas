@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from ..config import DEFAULT_ACCENT, DEFAULT_HIGHLIGHT, DEFAULT_LOGO, MESSAGE, MESSAGE_LINE
 from ..db import get_setting, registry, set_settings
-from . import catalog
+from . import catalog, mercadopago
 
 
 def find(slug):
@@ -86,7 +86,8 @@ def brand(t):
     # status: solo le llega distinto de "active" al super admin (al resto ya le respondió 423/410)
     return {"name": t["name"], "status": t["status"], "logo": t["logo"] or DEFAULT_LOGO,
             "accent": t["accent"] or DEFAULT_ACCENT, "highlight": t["highlight"] or DEFAULT_HIGHLIGHT,
-            "whatsapp": whatsapp(t), **messages(t), "custom_columns": custom_columns(t), "contact": contact(t)}
+            "whatsapp": whatsapp(t), **messages(t), "custom_columns": custom_columns(t), "contact": contact(t),
+            "payments": mercadopago.payments_on(t)}
 
 
 def super_view(t):
