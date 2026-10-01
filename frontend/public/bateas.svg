@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- discos asomando de la batea -->
-  <rect x="9" y="8" width="22" height="30" rx="2" fill="#e2492f" transform="rotate(-12 20 23)"/>
-  <rect x="21" y="5" width="22" height="30" rx="2" fill="#f2b33d" transform="rotate(-2 32 20)"/>
-  <rect x="33" y="8" width="22" height="30" rx="2" fill="#3f8f8a" transform="rotate(10 44 23)"/>
-  <circle cx="32" cy="17" r="6" fill="#141310"/>
-  <circle cx="32" cy="17" r="1.6" fill="#f2b33d"/>
+  <rect x="9" y="8" width="22" height="30" rx="2" fill="#5a5a66" transform="rotate(-12 20 23)"/>
+  <rect x="21" y="5" width="22" height="30" rx="2" fill="#ff5a1f" transform="rotate(-2 32 20)"/>
+  <rect x="33" y="8" width="22" height="30" rx="2" fill="#ff9a70" transform="rotate(10 44 23)"/>
+  <circle cx="32" cy="17" r="6" fill="#0f0f12"/>
+  <circle cx="32" cy="17" r="1.6" fill="#ff5a1f"/>
   <!-- la batea -->
-  <path d="M6 30h52l-4 28H10z" fill="#b5652b"/>
-  <path d="M6 30h52l-1 6H7z" fill="#8f4c1e"/>
-  <rect x="14" y="42" width="36" height="3" rx="1.5" fill="#8f4c1e"/>
-  <rect x="14" y="49" width="36" height="3" rx="1.5" fill="#8f4c1e"/>
+  <path d="M6 30h52l-4 28H10z" fill="#f2f0eb"/>
+  <path d="M6 30h52l-1 6H7z" fill="#bdbab3"/>
+  <rect x="14" y="42" width="36" height="3" rx="1.5" fill="#bdbab3"/>
+  <rect x="14" y="49" width="36" height="3" rx="1.5" fill="#bdbab3"/>
 </svg>
