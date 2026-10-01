@@ -66,17 +66,20 @@ def test_checkout_uses_catalog_prices_and_fee(shop, client, mp):
     assert r["url"] == "https://mp/pagar"
     method, path, token, pref = calls[-1]
     assert token == "seller-token" and [i["unit_price"] for i in pref["items"]] == [68000.0, 25000.0]
-    assert pref["marketplace_fee"] == 9300.0 and pref["external_reference"] == str(r["order"])
+    assert pref["marketplace_fee"] == 9300.0 and pref["external_reference"] == f"{slug}:{r['order']}"
     assert pref["back_urls"]["success"].endswith(f"/{slug}?pago=success&pedido={r['order']}")
     assert pref["notification_url"].endswith(f"/api/mercadopago/webhook?slug={slug}")
     assert admin.get(f"/api/t/{slug}/admin/pedidos").json() == []  # sin pago todavía: no se lista
 
     # aviso de Mercado Pago: se confirma consultando el pago con el token de la disquería
-    replies["/v1/payments/555"] = {"id": 555, "status": "approved", "external_reference": str(r["order"]),
-                                   "transaction_amount": 93000, "payer": {"email": "cliente@mail.com"}}
+    replies["/v1/payments/555"] = {"id": 555, "status": "approved", "external_reference": f"{slug}:{r['order']}",
+                                   "transaction_amount": 93000, "payer": {"email": "cliente@mail.com"},
+                                   "fee_details": [{"type": "mercadopago_fee", "amount": 5580}, {"type": "application_fee", "amount": 9300}],
+                                   "transaction_details": {"net_received_amount": 78120}}
     assert client.post(f"/api/mercadopago/webhook?slug={slug}", json={"type": "payment", "data": {"id": "555"}}).status_code == 200
     [order] = admin.get(f"/api/t/{slug}/admin/pedidos").json()
     assert order["status"] == "approved" and order["payer"] == "cliente@mail.com" and order["total"] == 93000
+    assert (order["fee"], order["mp_fee"], order["net"]) == (9300, 5580, 78120)  # Bateas, Mercado Pago, la disquería
     seen = admin.get(f"/api/t/{slug}/pedidos/{r['order']}", params={"payment_id": "555"}).json()
     assert seen["status"] == "approved" and "payer" not in seen
 
@@ -99,6 +102,26 @@ def test_direct_token_mode_for_development(shop, mp, monkeypatch):
     admin.post(f"/api/t/{slug}/pagar", json={"ids": [2]})
     _, _, token, pref = calls[-1]
     assert token == "TEST-token" and "marketplace_fee" not in pref  # la cuenta que cobra es la propia
+
+
+def test_lost_notification_is_recovered_and_other_stores_payments_ignored(shop, boss, mp):
+    slug, admin = shop
+    calls, replies = mp
+    upload(admin, slug, xlsx(*CATALOG), CATALOG_MAP)
+    connect(slug)
+    admin.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True})
+    replies["/checkout/preferences"] = {"init_point": "https://mp/pagar"}
+    order = admin.post(f"/api/t/{slug}/pagar", json={"ids": [2]}).json()["order"]
+    # un pago de OTRA disquería con el mismo número de pedido: no se toca
+    replies["/v1/payments/1"] = {"id": 1, "status": "approved", "external_reference": f"otra:{order}", "transaction_amount": 68000}
+    assert mercadopago.sync_payment(tenants.find(slug), "1") is None
+    # el aviso nunca llegó: la conciliación lo encuentra al abrir el admin
+    search = f"/v1/payments/search?external_reference={slug}%3A{order}&sort=date_created&criteria=desc&limit=1"
+    replies[search] = {"results": [{"id": 777}]}
+    replies["/v1/payments/777"] = {"id": 777, "status": "approved", "external_reference": f"{slug}:{order}", "transaction_amount": 68000}
+    [o] = admin.get(f"/api/t/{slug}/admin/pedidos").json()
+    assert o["status"] == "approved" and o["payment_id"] == "777"
+    assert boss.post("/api/super/reconcile").json()["changed"] == 0  # ya estaba al día
 
 
 def test_token_is_renewed_before_it_expires(shop, mp):

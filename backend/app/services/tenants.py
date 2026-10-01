@@ -94,5 +94,7 @@ def super_view(t):
     # lo que ve el super admin de cada disquería; nunca el hash de la contraseña
     view = {k: v for k, v in t.items() if k != "admin_hash"}
     view.update(client_code=client_code(t), code_required=code_required(t), whatsapp=whatsapp(t), total=catalog.total(t),
-                uploaded_at=get_setting(t, "uploaded_at") or None, closes_at=closes_at(t), closed=is_closed(t))
+                uploaded_at=get_setting(t, "uploaded_at") or None, closes_at=closes_at(t), closed=is_closed(t),
+                filename=get_setting(t, "filename") or None, mp_connected=mercadopago.connected(t),
+                payments=mercadopago.payments_on(t), discogs_user=get_setting(t, "discogs_user", ""))
     return view

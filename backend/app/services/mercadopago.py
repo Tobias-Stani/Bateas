@@ -16,7 +16,7 @@ from ..config import (MAX_ORDER, MP_ACCESS_TOKEN, MP_API, MP_AUTHORIZE, MP_CLIEN
                       MP_FEE_PERCENT, MP_TEST)
 from ..db import db, get_setting, now, set_settings
 from ..security import same
-from . import catalog
+from . import audit, catalog
 
 log = logging.getLogger("uvicorn.error")  # el motivo de un rechazo de Mercado Pago queda en el log del servidor
 PRICE = re.compile(r"\d+(\.\d+)?")  # mismo criterio que fmtPrice del front: sin moneda = pesos
@@ -94,6 +94,10 @@ def token(t):
     return current
 
 
+def mp_user(t):
+    return get_setting(t, "mp_user", "")
+
+
 def connected(t):
     return bool(get_setting(t, "mp_token", ""))
 
@@ -128,6 +132,11 @@ def _orders(t):
     con = db(t)
     con.execute("""CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, items TEXT NOT NULL,
                    total REAL NOT NULL, fee REAL NOT NULL, status TEXT NOT NULL, payment_id TEXT, payer TEXT, updated_at TEXT)""")
+    # lo que informa Mercado Pago de cada pago: su comisión y lo que le queda a la disquería (bases de antes no las tienen)
+    have = {c[1] for c in con.execute("PRAGMA table_info(orders)")}
+    for col in ("mp_fee", "net"):
+        if col not in have:
+            con.execute(f"ALTER TABLE orders ADD COLUMN {col} REAL")
     return con
 
 
@@ -156,11 +165,12 @@ def checkout(t, ids, base_url):
         order = con.execute("INSERT INTO orders (created_at, items, total, fee, status) VALUES (?, ?, ?, ?, 'pending')",
                             (now(), json.dumps(items, ensure_ascii=False), total, fee)).lastrowid
     con.close()
+    audit.log(t["slug"], "client", "checkout_started", order=order, total=total, fee=fee, discs=[it["id"] for it in items])
     store = f"{base_url}{t['slug']}"
     pref = _call("POST", "/checkout/preferences", token(t), {
         "items": [{"id": str(it["id"]), "title": f"#{it['id']} {it['artist']} – {it['title']}"[:250], "quantity": 1,
                    "unit_price": it["price"], "currency_id": MP_CURRENCY} for it in items],
-        "external_reference": str(order),
+        "external_reference": ref(t, order),
         **({"marketplace_fee": fee} if fee else {}),
         "back_urls": {k: f"{store}?pago={k}&pedido={order}" for k in ("success", "failure", "pending")},
         # Mercado Pago rechaza el regreso automático a localhost; en local se vuelve con "Volver al sitio"
@@ -168,26 +178,79 @@ def checkout(t, ids, base_url):
         "notification_url": f"{base_url}api/mercadopago/webhook?slug={t['slug']}",
         "statement_descriptor": t["name"][:22],
     })
-    return {"order": order, "url": (MP_TEST and pref.get("sandbox_init_point")) or pref["init_point"]}
+    # el checkout de sandbox es solo para las credenciales viejas "TEST-"; las de prueba nuevas (APP_USR-) usan el
+    # link normal y se paga con una cuenta comprador de prueba
+    sandbox = MP_TEST and token(t).startswith("TEST-") and pref.get("sandbox_init_point")
+    return {"order": order, "url": sandbox or pref["init_point"]}
+
+
+def ref(t, order_id):
+    # "slug:número": el número solo se repite entre disquerías (y en modo desarrollo comparten la cuenta de Mercado Pago)
+    return f"{t['slug']}:{order_id}"
+
+
+def order_of(t, reference):
+    """El número de pedido de esta disquería, o None si el pago es de otra."""
+    slug, _, number = str(reference or "").rpartition(":")
+    if slug and slug != t["slug"]:
+        return None
+    return int(number) if number.isdigit() else None  # sin "slug:" = pedido de antes del cambio
 
 
 def sync_payment(t, payment_id):
-    """Trae el pago de Mercado Pago (la única fuente confiable) y actualiza su pedido. Lo usan el webhook y la vuelta del cliente."""
+    """Trae el pago de Mercado Pago (la única fuente confiable) y actualiza su pedido. Lo usan el webhook, la vuelta del cliente
+    y la conciliación."""
     p = _call("GET", f"/v1/payments/{int(payment_id)}", token(t))
+    order_id = order_of(t, p.get("external_reference"))
+    if order_id is None:
+        return None
     con = _orders(t)
-    row = con.execute("SELECT * FROM orders WHERE id = ?", (int(p.get("external_reference") or 0),)).fetchone()
+    row = con.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
     if not row:
         con.close()
         return None
     status = p.get("status", "pending")
     if status == "approved" and abs(float(p.get("transaction_amount", 0)) - row["total"]) > 0.01:
         status = "amount_mismatch"  # nunca debería pasar: el monto cobrado no es el del pedido
+    fees = p.get("fee_details") or []
+    mp_fee = sum(f.get("amount", 0) for f in fees if f.get("type") == "mercadopago_fee") if fees else None
+    net = (p.get("transaction_details") or {}).get("net_received_amount")
     with con:
-        con.execute("UPDATE orders SET status = ?, payment_id = ?, payer = ?, updated_at = ? WHERE id = ?",
-                    (status, str(p.get("id")), (p.get("payer") or {}).get("email", ""), now(), row["id"]))
+        con.execute("UPDATE orders SET status = ?, payment_id = ?, payer = ?, mp_fee = ?, net = ?, updated_at = ? WHERE id = ?",
+                    (status, str(p.get("id")), (p.get("payer") or {}).get("email", ""), mp_fee, net, now(), row["id"]))
+    before = row["status"] if row["payment_id"] == str(p.get("id")) else None  # otro intento de pago = cambio nuevo
     row = con.execute("SELECT * FROM orders WHERE id = ?", (row["id"],)).fetchone()
     con.close()
-    return order_view(row)
+    order = order_view(row)
+    audit.record_payment(t["slug"], order)  # el libro central: sobrevive aunque se elimine la disquería
+    if before != status:
+        audit.log(t["slug"], "mercadopago", "payment", order=order["id"], payment_id=order["payment_id"], before=before,
+                  status=status, total=order["total"], fee=order["fee"], mp_fee=order["mp_fee"], net=order["net"],
+                  amount_paid=p.get("transaction_amount"))
+    return order
+
+
+RECONCILE_DAYS = 7  # se buscan los pedidos sin confirmar de la última semana
+
+
+def reconcile(t):
+    """Pregunta a Mercado Pago por los pedidos que quedaron sin confirmar: por si se perdió un aviso (o en local, donde
+    nunca llegan). Devuelve cuántos pedidos cambiaron."""
+    if not connected(t):
+        return 0
+    since = (datetime.now(timezone.utc) - timedelta(days=RECONCILE_DAYS)).isoformat(timespec="minutes")
+    con = _orders(t)
+    open_orders = con.execute("""SELECT id, status FROM orders WHERE created_at >= ? AND status NOT IN
+                                 ('approved', 'rejected', 'cancelled', 'refunded', 'charged_back') ORDER BY id DESC LIMIT 30""",
+                              (since,)).fetchall()
+    con.close()
+    changed = 0
+    for row in open_orders:
+        found = _call("GET", f"/v1/payments/search?external_reference={urllib.parse.quote(ref(t, row['id']))}"
+                             "&sort=date_created&criteria=desc&limit=1", token(t)).get("results") or []
+        if found and (order := sync_payment(t, found[0]["id"])) and order["status"] != row["status"]:
+            changed += 1
+    return changed
 
 
 def get_order(t, order_id):

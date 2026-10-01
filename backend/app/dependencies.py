@@ -39,6 +39,11 @@ def require_admin(t: dict = Depends(tenant), admin: str | None = Cookie(None), s
     return t
 
 
+def actor(sup: bool = Depends(is_super)):
+    # para el registro de actividad: el super admin también entra a los admins
+    return "super" if sup else "admin"
+
+
 def require_client(t: dict = Depends(tenant), session: str | None = Cookie(None),
                    admin: str | None = Cookie(None), sup: bool = Depends(is_super)):
     if is_admin(t, admin, sup):

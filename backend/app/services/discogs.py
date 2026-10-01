@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from ..config import DISCOGS_AGENT, DISCOGS_API, DISCOGS_AUTHORIZE, DISCOGS_KEY, DISCOGS_PAGE, DISCOGS_SECRET, FIELDS
 from ..db import get_setting, now, set_settings
 from ..security import same
-from . import catalog, sections
+from . import audit, catalog, sections
 
 # lo que trae Discogs y no tiene campo fijo: columnas propias, usables en el mensaje como {ano}, {estado}, {tapa}
 COLUMNS = [{"key": catalog.custom_key(n), "name": n} for n in ("Año", "Estado", "Tapa")]
@@ -147,8 +147,11 @@ def import_inventory(t):
         catalog.save(t, rows)
         set_settings(t, filename=f"Discogs · @{name}", uploaded_at=now(), custom_columns=json.dumps(COLUMNS, ensure_ascii=False))
         _set_job(t, state="done", done=len(rows), total=len(rows), sections_missing=sections.missing_after_upload(t))
+        audit.log(t["slug"], "system", "catalog_uploaded", source="discogs", user=name, discs=len(rows))
     except HTTPException as e:
         _set_job(t, state="error", message=e.detail)
-    except Exception:
+        audit.log(t["slug"], "system", "discogs_import_failed", user=name, error=e.detail, done=len(rows))
+    except Exception as e:
         _set_job(t, state="error", message="Algo falló al importar desde Discogs. Probá de nuevo.")
+        audit.log(t["slug"], "system", "discogs_import_failed", user=name, error=repr(e), done=len(rows))
         raise  # queda en el log del servidor

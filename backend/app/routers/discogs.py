@@ -4,8 +4,8 @@ from urllib.parse import quote
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from ..dependencies import require_admin
-from ..services import discogs, tenants
+from ..dependencies import actor, require_admin
+from ..services import audit, discogs, tenants
 
 router = APIRouter(tags=["discogs"])
 ADMIN = "/api/t/{slug}/admin/discogs"
@@ -27,22 +27,27 @@ def callback(slug: str, oauth_token: str = "", oauth_verifier: str = "", denied:
     if denied or not oauth_verifier:
         return back("denied")
     try:
-        discogs.finish(t, oauth_token, oauth_verifier)
+        user = discogs.finish(t, oauth_token, oauth_verifier)
     except HTTPException as e:
+        audit.log(slug, "admin", "discogs_connect_failed", error=e.detail)
         return back("error", e.detail)
+    audit.log(slug, "admin", "discogs_connected", user=user)
     return back("ok")
 
 
 @router.post(f"{ADMIN}/import")
-def start_import(tasks: BackgroundTasks, t: dict = Depends(require_admin)):
+def start_import(tasks: BackgroundTasks, t: dict = Depends(require_admin), who: str = Depends(actor)):
     discogs.begin(t)
+    audit.log(t["slug"], who, "discogs_import_started", user=discogs.user(t))
     tasks.add_task(discogs.import_inventory, t)
     return discogs.status(t)
 
 
 @router.delete(ADMIN)
-def disconnect(t: dict = Depends(require_admin)):
+def disconnect(t: dict = Depends(require_admin), who: str = Depends(actor)):
     if discogs.running(t):
         raise HTTPException(409, "Esperá a que termine la importación para desconectar.")
+    user = discogs.user(t)
     discogs.disconnect(t)
+    audit.log(t["slug"], who, "discogs_disconnected", user=user)
     return discogs.status(t)

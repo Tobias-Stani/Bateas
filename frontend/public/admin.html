@@ -350,10 +350,11 @@
 
     <section id="orders-panel" class="panel" aria-labelledby="h-orders" style="margin-bottom:24px" hidden>
       <h2 id="h-orders">Pedidos pagados</h2>
-      <p class="hint">Los pagos que entraron por Mercado Pago, del más nuevo al más viejo. La plata ya está en tu cuenta de Mercado Pago.</p>
+      <p class="hint">Los pagos que entraron por Mercado Pago, del más nuevo al más viejo. Las comisiones son las que informa Mercado Pago en cada pago; lo que te queda ya está en tu cuenta.</p>
+      <p id="orders-sum" class="summary" style="margin-top:12px"></p>
       <div class="table-wrap" style="margin-top:16px">
         <table>
-          <thead><tr><th>Pedido</th><th>Fecha</th><th>Discos</th><th>Total</th><th>Estado</th><th>Pagó</th></tr></thead>
+          <thead><tr><th>Pedido</th><th>Fecha</th><th>Discos</th><th>Total</th><th>Comisión Mercado Pago</th><th>Comisión Bateas</th><th>Te queda</th><th>Estado</th><th>Pagó</th></tr></thead>
           <tbody id="orders"></tbody>
         </table>
       </div>
@@ -848,11 +849,18 @@ function renderMp() {
 async function loadOrders() {
   const orders = await api("/api/admin/pedidos").catch(() => []);
   $("orders-panel").hidden = !orders.length;
+  const money = n => n == null ? "—" : fmtPrice(String(Math.round(n * 100) / 100));
+  const paid = orders.filter(o => o.status === "approved"), sum = k => paid.reduce((s, o) => s + (o[k] || 0), 0);
+  $("orders-sum").innerHTML = paid.length ? `<strong>${num(paid.length)} ${paid.length === 1 ? "venta" : "ventas"} · ${money(sum("total"))}</strong>
+    <span class="hint">Mercado Pago: ${money(sum("mp_fee"))} · Bateas: ${money(sum("fee"))} · Te quedó: ${money(sum("net"))}</span>` : "";
   $("orders").innerHTML = orders.map(o => `<tr>
     <td><span class="sticker">#${o.id}</span></td>
     <td>${esc(fmtDate(o.updated_at || o.created_at))}</td>
     <td class="wrap">${o.items.map(i => `#${i.id} ${esc(i.artist)} – ${esc(i.title)}`).join("<br>")}</td>
-    <td>${esc(fmtPrice(String(o.total)))}</td>
+    <td>${esc(money(o.total))}</td>
+    <td>${esc(money(o.mp_fee))}</td>
+    <td>${esc(money(o.fee))}</td>
+    <td><b>${esc(money(o.net))}</b></td>
     <td>${esc(MP_STATUS[o.status] || o.status)}</td>
     <td>${esc(o.payer || "")}</td></tr>`).join("");
 }

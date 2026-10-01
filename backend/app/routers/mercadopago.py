@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from urllib.parse import quote
 
-from ..dependencies import require_admin, require_client
+from ..dependencies import actor, require_admin, require_client
 from ..schemas import Order, Toggle
-from ..services import mercadopago, tenants
+from ..services import audit, mercadopago, tenants
 
 router = APIRouter(tags=["mercadopago"])
 ADMIN = "/api/t/{slug}/admin"
@@ -19,11 +19,12 @@ def callback_url(request):
 # --- admin ---
 
 @router.post(f"{ADMIN}/mercadopago/connect")
-def connect(request: Request, t: dict = Depends(require_admin)):
+def connect(request: Request, t: dict = Depends(require_admin), who: str = Depends(actor)):
     if not mercadopago.enabled():
         raise HTTPException(400, "Los pagos con Mercado Pago no están configurados en el servidor.")
     if mercadopago.direct():
         mercadopago.connect_direct(t)
+        audit.log(t["slug"], who, "mp_connected", mode="desarrollo")
         return {"url": f"/{t['slug']}/admin?mp=ok"}
     return {"url": mercadopago.start(t, callback_url(request))}
 
@@ -38,24 +39,32 @@ def callback(request: Request, state: str = "", code: str = "", error: str = "")
     try:
         mercadopago.finish(t, nonce, code, callback_url(request))
     except HTTPException as e:
+        audit.log(slug, "admin", "mp_connect_failed", error=e.detail)
         return back("error", e.detail)
+    audit.log(slug, "admin", "mp_connected", mode="marketplace", mp_user=mercadopago.mp_user(t))
     return back("ok")
 
 
 @router.delete(f"{ADMIN}/mercadopago")
-def disconnect(t: dict = Depends(require_admin)):
+def disconnect(t: dict = Depends(require_admin), who: str = Depends(actor)):
     mercadopago.disconnect(t)
+    audit.log(t["slug"], who, "mp_disconnected")
     return mercadopago.status(t)
 
 
 @router.put(f"{ADMIN}/mercadopago/payments")
-def toggle_payments(body: Toggle, t: dict = Depends(require_admin)):
+def toggle_payments(body: Toggle, t: dict = Depends(require_admin), who: str = Depends(actor)):
     mercadopago.set_payments(t, body.value)
+    audit.log(t["slug"], who, "mp_payments", value=body.value)
     return mercadopago.status(t)
 
 
 @router.get(f"{ADMIN}/pedidos")
 def orders(t: dict = Depends(require_admin)):
+    try:
+        mercadopago.reconcile(t)  # antes de listar: por si se perdió algún aviso de Mercado Pago
+    except HTTPException:
+        pass  # Mercado Pago no responde: se muestra lo que ya hay
     return mercadopago.list_orders(t)
 
 

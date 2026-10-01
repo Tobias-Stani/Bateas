@@ -68,6 +68,25 @@
   .status-actions { display: flex; gap: 10px; flex-wrap: wrap; }
   .btn-danger { background: var(--red); border-color: var(--red); }
   .btn-danger:hover { background: #a72822; }
+
+  /* pagos y actividad */
+  .stat small { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+  .stats-title { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+  .notice { border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; background: #fdf1d8; color: #7a5300; }
+  .notice.bad { background: #f7e1e0; color: var(--red); }
+  .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin: 8px 0 20px; }
+  .tabs button { border: 0; background: none; font: inherit; font-weight: 700; padding: 10px 16px; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
+  .log td { white-space: normal; vertical-align: top; }
+  .log td:first-child { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .log tbody tr { cursor: default; }
+  .who { font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--paper); white-space: nowrap; }
+  .who.super { background: #e8ecff; color: #3346a8; }
+  .who.mercadopago { background: #e1f3fb; color: #00709f; }
+  .who.client { background: #e3f3ea; color: var(--green); }
+  .what { font-weight: 700; display: block; }
+  .what.bad { color: var(--red); }
+  .more { display: flex; justify-content: center; margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -102,6 +121,55 @@
       <div class="stat"><strong id="s-suspended">0</strong><span>Suspendidas</span></div>
       <div class="stat"><strong id="s-cancelled">0</strong><span>Canceladas</span></div>
     </div>
+
+    <p class="stats-title">Pagos online</p>
+    <div id="mp-notice"></div>
+    <div class="stats">
+      <div class="stat"><strong id="p-sales">0</strong><span>Ventas pagadas</span><small id="p-sales-month"></small></div>
+      <div class="stat"><strong id="p-total">$ 0</strong><span>Cobrado por las disquerías</span><small id="p-total-month"></small></div>
+      <div class="stat"><strong id="p-fee">$ 0</strong><span id="p-fee-label">Comisión de Bateas</span><small id="p-fee-month"></small></div>
+      <div class="stat"><strong id="p-stores">0</strong><span>Disquerías cobrando online</span><small id="p-connected"></small></div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Secciones del panel">
+      <button role="tab" data-tab="tenants" aria-selected="true">Disquerías</button>
+      <button role="tab" data-tab="payments" aria-selected="false">Pagos</button>
+      <button role="tab" data-tab="activity" aria-selected="false">Actividad</button>
+    </nav>
+
+    <section id="tab-payments" hidden aria-label="Pagos">
+      <div class="head">
+        <h2>Pagos</h2>
+        <select id="pay-store" class="field" aria-label="Filtrar pagos por disquería"><option value="">Todas las disquerías</option></select>
+        <button id="pay-sync" class="btn btn-outline btn-sm">Buscar pagos sin confirmar</button>
+        <button id="pay-csv" class="btn btn-outline btn-sm">Descargar CSV</button>
+      </div>
+      <p class="hint" style="margin-bottom:12px">Cada pago que informó Mercado Pago, aprobado o no. Queda guardado aunque se elimine la disquería.</p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>Fecha</th><th>Disquería</th><th>Pedido</th><th>Estado</th><th class="num">Total</th><th class="num">Mercado Pago</th><th class="num">Bateas</th><th class="num">Disquería</th><th>Pagó</th><th>Pago MP</th></tr></thead>
+          <tbody id="pay-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-activity" hidden aria-label="Actividad">
+      <div class="head">
+        <h2>Actividad</h2>
+        <select id="ev-store" class="field" aria-label="Filtrar actividad por disquería"><option value="">Toda la plataforma</option></select>
+        <select id="ev-kind" class="field" aria-label="Filtrar actividad por tipo"><option value="">Todo</option></select>
+      </div>
+      <p id="ev-hint" class="hint" style="margin-bottom:12px"></p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>Cuándo</th><th>Disquería</th><th>Quién</th><th>Qué pasó</th></tr></thead>
+          <tbody id="ev-rows"></tbody>
+        </table>
+      </div>
+      <div class="more"><button id="ev-more" class="btn btn-outline btn-sm" hidden>Cargar más</button></div>
+    </section>
+
+    <section id="tab-tenants" aria-label="Disquerías">
 
     <section id="create" class="panel" style="margin-bottom:24px" hidden aria-labelledby="h-create">
       <h2 id="h-create">Nueva disquería</h2>
@@ -153,10 +221,11 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Disquería</th><th>Estado</th><th class="num">Discos</th><th>Último catálogo</th><th>WhatsApp</th><th>Creada</th><th>Links</th></tr></thead>
+        <thead><tr><th>Disquería</th><th>Estado</th><th class="num">Discos</th><th>Último catálogo</th><th>Mercado Pago</th><th class="num">Ventas online</th><th>WhatsApp</th><th>Creada</th><th>Links</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
+    </section>
   </main>
 
   <!-- detalle -->
@@ -215,6 +284,12 @@
           <dl id="d-facts" class="facts" style="margin-top:12px"></dl>
         </section>
 
+        <section class="panel" aria-labelledby="h-d-activity">
+          <h3 id="h-d-activity">Actividad reciente</h3>
+          <p class="hint">Lo último que pasó en esta disquería. El historial completo está en la pestaña Actividad.</p>
+          <div class="table-wrap"><table class="log"><tbody id="d-activity"></tbody></table></div>
+        </section>
+
         <section class="panel" aria-labelledby="h-access">
           <h3 id="h-access">Acceso del admin</h3>
           <p class="hint">Si el dueño perdió la contraseña, generale una nueva. Las sesiones abiertas se cierran.</p>
@@ -240,7 +315,50 @@ const STATUS_HINT = {
   suspended: "Clientes y admin ven \"tienda suspendida\". Los datos quedan intactos y se puede reactivar cuando quieras.",
   cancelled: "La tienda figura como no disponible. Los datos se conservan hasta que la elimines definitivamente.",
 };
-let tenants = [], current = null;
+let tenants = [], current = null, stats = { all: {}, month: {}, by_slug: {}, kinds: [] };
+
+// --- registro de actividad: cómo se lee cada evento ---
+const KIND = {
+  super_login: "Entraste al super admin", super_login_failed: "Contraseña de super admin incorrecta",
+  tenant_created: "Disquería creada", tenant_updated: "Datos o marca editados", tenant_status: "Cambio de estado",
+  admin_password_reset: "Nueva contraseña de admin", tenant_deleted: "Disquería eliminada",
+  admin_login: "Entró al admin", admin_login_failed: "Contraseña de admin incorrecta",
+  settings_changed: "Configuración cambiada", catalog_uploaded: "Catálogo cargado", catalog_deleted: "Catálogo eliminado",
+  discogs_connected: "Discogs conectado", discogs_connect_failed: "Falló la conexión con Discogs", discogs_disconnected: "Discogs desconectado",
+  discogs_import_started: "Importación de Discogs iniciada", discogs_import_failed: "Falló la importación de Discogs",
+  mp_connected: "Mercado Pago conectado", mp_connect_failed: "Falló la conexión con Mercado Pago", mp_disconnected: "Mercado Pago desconectado",
+  mp_payments: "Cobro online", checkout_started: "Un cliente fue a pagar", payment: "Pago",
+};
+const BAD = new Set(["super_login_failed", "admin_login_failed", "discogs_connect_failed", "discogs_import_failed", "mp_connect_failed", "tenant_deleted"]);
+const ACTOR = { super: "Vos", admin: "Disquería", client: "Cliente", mercadopago: "Mercado Pago", system: "Sistema" };
+const FIELD = { client_code: "Código de acceso", code_required: "Pedir código", whatsapp: "WhatsApp", contact: "Datos de contacto",
+                message: "Mensaje del pedido", closes_at: "Fecha de cierre" };
+const PAY = { approved: "Pagado", pending: "Pendiente", in_process: "En revisión", authorized: "Autorizado", rejected: "Rechazado",
+              cancelled: "Cancelado", refunded: "Devuelto", charged_back: "Contracargo", amount_mismatch: "Monto distinto: revisar" };
+const money = n => n == null ? "—" : fmtPrice(String(Math.round(n * 100) / 100)) || "$ 0";
+const when = iso => new Date(iso).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "medium" });
+const nameOf = slug => slug ? (tenants.find(t => t.slug === slug)?.name || `/${slug} (eliminada)`) : "Plataforma";
+function describe(e) {
+  const d = e.detail;
+  const text = {
+    payment: () => `Pedido #${d.order} · ${PAY[d.status] || d.status} · ${money(d.total)} · Bateas ${money(d.fee)}${d.mp_fee != null ? ` · Mercado Pago ${money(d.mp_fee)}` : ""}`,
+    checkout_started: () => `Pedido #${d.order} · ${d.discs.length} ${d.discs.length === 1 ? "disco" : "discos"} · ${money(d.total)}`,
+    catalog_uploaded: () => `${num(d.discs)} discos, ${d.source === "discogs" ? `desde Discogs @${d.user}` : `del Excel ${d.filename}`}`,
+    catalog_deleted: () => `Tenía ${num(d.discs)} discos`,
+    tenant_status: () => `${STATUS[d.before]} → ${STATUS[d.after]}`,
+    tenant_deleted: () => `${d.name} · tenía ${num(d.discs)} discos · creada el ${shortDate(d.created_at)}`,
+    settings_changed: () => `${FIELD[d.field] || d.field}${d.after !== undefined ? `: ${d.before || "—"} → ${d.after}` : d.value === true ? ": sí" : d.value === false ? ": no" : ""}`,
+    mp_payments: () => d.value ? "Prendido" : "Apagado",
+    tenant_updated: () => Object.entries(d).map(([k, v]) => Array.isArray(v) ? `${k}: ${v[0] ?? "—"} → ${v[1]}` : `${k}: ${v}`).join(" · "),
+  }[e.kind];
+  return text ? text() : Object.entries(d).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
+}
+const eventRow = (e, withStore = true) => `<tr>
+  <td>${esc(when(e.at))}</td>
+  ${withStore ? `<td>${esc(nameOf(e.slug))}</td>` : ""}
+  <td><span class="who ${esc(e.actor)}">${esc(ACTOR[e.actor] || e.actor)}</span></td>
+  <td><span class="what ${BAD.has(e.kind) || (e.kind === "payment" && !["approved", "pending", "in_process", "authorized"].includes(e.detail.status)) ? "bad" : ""}">${esc(KIND[e.kind] || e.kind)}</span>
+      <small>${esc(describe(e))}</small></td></tr>`;
 
 const shortDate = iso => iso ? new Date(iso).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const storeUrl = slug => `${location.origin}/${slug}`;
@@ -263,9 +381,10 @@ function handle(err, errorEl) {
 // --- sesión ---
 function showGate() { $("app").hidden = true; $("gate").hidden = false; $("password").focus(); }
 async function openApp() {
-  tenants = await api("/api/super/tenants");
+  [tenants, stats] = await Promise.all([api("/api/super/tenants"), api("/api/super/stats")]);
   $("gate").hidden = true; $("app").hidden = false;
   renderList();
+  renderStats();
 }
 $("login").onsubmit = async e => {
   e.preventDefault();
@@ -297,13 +416,101 @@ function renderList() {
       <td><span class="chip ${t.status}">${STATUS[t.status]}</span></td>
       <td class="num">${t.total ? num(t.total) : "—"}</td>
       <td>${shortDate(t.uploaded_at)}</td>
+      <td>${t.payments ? '<span class="chip active">Cobrando</span>' : t.mp_connected ? "<small>Conectada, apagado</small>" : "<small>—</small>"}</td>
+      <td class="num">${(s => s ? `${num(s.n)} · ${money(s.total)}` : "—")(stats.by_slug[t.slug])}</td>
       <td>${t.whatsapp ? `+${esc(t.whatsapp)}` : '<small>Sin configurar</small>'}</td>
       <td>${shortDate(t.created_at)}</td>
       <td><span class="row-links"><a href="/${esc(t.slug)}" target="_blank" rel="noopener">Tienda ↗</a><a href="/${esc(t.slug)}/admin" target="_blank" rel="noopener">Admin ↗</a></span></td>
     </tr>`).join("")
-    : `<tr><td colspan="7" class="hint" style="padding:28px;text-align:center;cursor:default">${tenants.length ? "Nada coincide con la búsqueda." : "Todavía no hay disquerías. Creá la primera con <b>Nueva disquería</b>."}</td></tr>`;
+    : `<tr><td colspan="9" class="hint" style="padding:28px;text-align:center;cursor:default">${tenants.length ? "Nada coincide con la búsqueda." : "Todavía no hay disquerías. Creá la primera con <b>Nueva disquería</b>."}</td></tr>`;
 }
 $("q").oninput = $("filter").onchange = renderList;
+
+// --- pagos online: totales ---
+function renderStats() {
+  const a = stats.all, m = stats.month, sales = n => `${num(n || 0)} ${n === 1 ? "venta" : "ventas"}`;
+  $("p-sales").textContent = num(a.n || 0);
+  $("p-sales-month").textContent = `${sales(m.n)} en los últimos 30 días`;
+  $("p-total").textContent = money(a.total || 0);
+  $("p-total-month").textContent = `${money(m.total || 0)} en 30 días`;
+  $("p-fee").textContent = money(a.fee || 0);
+  $("p-fee-label").textContent = `Comisión de Bateas (${stats.fee_percent}%)`;
+  $("p-fee-month").textContent = `${money(m.fee || 0)} en 30 días · Mercado Pago cobró ${money(a.mp_fee || 0)}`;
+  $("p-stores").textContent = num(tenants.filter(t => t.payments).length);
+  $("p-connected").textContent = `${num(tenants.filter(t => t.mp_connected).length)} con Mercado Pago conectado`;
+  $("mp-notice").innerHTML = [
+    !stats.mp_enabled && `<p class="notice">Mercado Pago no está configurado en el servidor: las disquerías no pueden cobrar online.</p>`,
+    stats.mp_test && `<p class="notice">Mercado Pago está en <b>modo prueba</b>: estos pagos no son plata real.</p>`,
+    stats.problems && `<p class="notice bad">${num(stats.problems)} ${stats.problems === 1 ? "pago necesita" : "pagos necesitan"} revisión (devuelto, contracargo o monto distinto). Mirá la pestaña Pagos.</p>`,
+  ].filter(Boolean).join("");
+  const options = first => first + tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.name)}</option>`).join("");
+  $("pay-store").innerHTML = options('<option value="">Todas las disquerías</option>');
+  $("ev-store").innerHTML = options('<option value="">Toda la plataforma</option>');
+  $("ev-kind").innerHTML = '<option value="">Todo</option>' + stats.kinds.map(k => `<option value="${esc(k)}">${esc(KIND[k] || k)}</option>`).join("");
+}
+
+// --- pestañas ---
+document.querySelector(".tabs").onclick = e => {
+  const tab = e.target.dataset.tab;
+  if (!tab) return;
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  for (const name of ["tenants", "payments", "activity"]) $(`tab-${name}`).hidden = name !== tab;
+  if (tab === "payments") loadPayments();
+  if (tab === "activity") loadEvents(true);
+};
+
+// --- pagos: el libro central ---
+let payments = [];
+async function loadPayments() {
+  try { payments = await api(`/api/super/payments?slug=${encodeURIComponent($("pay-store").value)}`); }
+  catch (err) { return handle(err); }
+  $("pay-rows").innerHTML = payments.length ? payments.map(p => `<tr>
+    <td>${esc(when(p.created_at))}</td><td>${esc(nameOf(p.slug))}</td><td>#${p.order_id}</td>
+    <td><span class="what ${p.status === "approved" ? "" : "bad"}">${esc(PAY[p.status] || p.status)}</span></td>
+    <td class="num">${money(p.total)}</td><td class="num">${money(p.mp_fee)}</td><td class="num">${money(p.fee)}</td><td class="num">${money(p.net)}</td>
+    <td>${esc(p.payer || "")}</td><td><small>${esc(p.payment_id)}</small></td></tr>`).join("")
+    : `<tr><td colspan="10" class="hint" style="padding:28px;text-align:center">Todavía no hay pagos.</td></tr>`;
+}
+$("pay-store").onchange = loadPayments;
+// por si se perdió un aviso de Mercado Pago: le pregunta por los pedidos de la última semana que quedaron sin confirmar
+$("pay-sync").onclick = async e => {
+  setBusy(e.target, true, "Consultando a Mercado Pago…");
+  try {
+    const r = await api("/api/super/reconcile", { method: "POST" });
+    [tenants, stats] = await Promise.all([api("/api/super/tenants"), api("/api/super/stats")]);
+    renderStats(); renderList(); await loadPayments();
+    Swal.fire({ icon: r.failed.length ? "warning" : "success",
+      title: r.changed ? `${r.changed} ${r.changed === 1 ? "pago actualizado" : "pagos actualizados"}` : "Todo al día",
+      text: r.failed.length ? `No se pudo consultar: ${r.failed.join(", ")}. Probá de nuevo en un rato.` : "No había pagos sin confirmar en la última semana." });
+  } catch (err) { handle(err); }
+  finally { setBusy(e.target, false); }
+};
+$("pay-csv").onclick = () => {
+  // para el contador: una fila por pago, con los montos sin formato
+  const cols = ["created_at", "slug", "order_id", "payment_id", "status", "total", "mp_fee", "fee", "net", "payer", "items"];
+  const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = payments.map(p => cols.map(c => cell(c === "items" ? p.items.map(i => `#${i.id} ${i.artist} - ${i.title}`).join(" | ") : p[c])).join(","));
+  const blob = new Blob(["﻿" + [cols.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `bateas-pagos-${new Date().toISOString().slice(0, 10)}.csv` });
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+// --- actividad ---
+let lastEvent = 0;
+async function loadEvents(reset) {
+  if (reset) { lastEvent = 0; $("ev-rows").innerHTML = ""; }
+  const params = new URLSearchParams({ slug: $("ev-store").value, kind: $("ev-kind").value, before: lastEvent, limit: 100 });
+  let rows;
+  try { rows = await api(`/api/super/events?${params}`); } catch (err) { return handle(err); }
+  $("ev-rows").insertAdjacentHTML("beforeend", rows.map(e => eventRow(e)).join(""));
+  if (reset && !rows.length) $("ev-rows").innerHTML = `<tr><td colspan="4" class="hint" style="padding:28px;text-align:center">No hay actividad con ese filtro.</td></tr>`;
+  if (rows.length) lastEvent = rows[rows.length - 1].id;
+  $("ev-more").hidden = rows.length < 100;
+  $("ev-hint").textContent = `${num(stats.events_day || 0)} eventos en las últimas 24 horas. Se guarda todo y no se borra nada, ni al eliminar una disquería.`;
+}
+$("ev-store").onchange = $("ev-kind").onchange = () => loadEvents(true);
+$("ev-more").onclick = () => loadEvents(false);
 $("rows").onclick = e => { const tr = e.target.closest("tr[data-slug]"); if (tr && !e.target.closest("a")) openDetail(tr.dataset.slug); };
 $("rows").onkeydown = e => { const tr = e.target.closest("tr[data-slug]"); if (tr && e.key === "Enter" && !e.target.closest("a")) openDetail(tr.dataset.slug); };
 
@@ -355,6 +562,10 @@ function openDetail(slug) {
   $("brand-error").textContent = "";
   renderDetail(true);
   scrollTo(0, 0);
+  $("d-activity").innerHTML = "";
+  api(`/api/super/events?slug=${encodeURIComponent(slug)}&limit=30`)
+    .then(rows => { $("d-activity").innerHTML = rows.map(e => eventRow(e, false)).join("") || '<tr><td class="hint">Sin actividad todavía.</td></tr>'; })
+    .catch(handle);
 }
 function renderDetail(fillForm) {
   const t = current;
@@ -370,6 +581,10 @@ function renderDetail(fillForm) {
     ["Lista", !t.closes_at ? "Abierta, sin fecha de cierre" : t.closed ? `Cerrada desde el ${fmtDate(t.closes_at)}` : `Abierta hasta el ${fmtDate(t.closes_at)}`],
     ["Acceso", t.code_required === false ? "Pública, sin código" : `Con código: ${esc(t.client_code)}`],
     ["WhatsApp", t.whatsapp ? `+${esc(t.whatsapp)}` : "Sin configurar"],
+    ["Mercado Pago", t.payments ? "Conectado y cobrando online" : t.mp_connected ? "Conectado, cobro online apagado" : "Sin conectar"],
+    ["Ventas online", (s => s ? `${num(s.n)} · ${money(s.total)} · Bateas ${money(s.fee)}` : "Ninguna")(stats.by_slug[t.slug])],
+    ["Discogs", t.discogs_user ? `@${esc(t.discogs_user)}` : "Sin conectar"],
+    ["Catálogo", t.filename ? esc(t.filename) : "—"],
     ["Creada", fmtDate(t.created_at)],
     [`${STATUS[t.status]} desde`, fmtDate(t.status_at)],
   ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
