@@ -1,0 +1,30 @@
+# nombre fijo: contenedores y volumen no dependen de cómo se llame la carpeta
+name: bateas
+
+services:
+  backend:
+    build: ./backend
+    # --reload para desarrollo; sacarlo en producción
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      # desarrollo: si no está en .env, la contraseña de /super es "super"
+      SUPER_PASSWORD: ${SUPER_PASSWORD:-super}
+      DATA_DIR: /data
+    volumes:
+      - ./backend:/app
+      - data:/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${PORT:-8000}:80"
+    volumes:
+      # montado: los cambios en los HTML se ven con F5
+      - ./frontend/public:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  data:

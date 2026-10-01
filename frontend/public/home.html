@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bateas · Por melómanos, para melómanos</title>
+<meta name="description" content="Tu disquería online en un minuto. Subí el Excel del distribuidor, tus clientes arman el pedido en tu propia tienda y te llega ordenado por WhatsApp.">
+<meta property="og:title" content="Bateas · Por melómanos, para melómanos">
+<meta property="og:description" content="Tu disquería online en un minuto: subís el Excel, tus clientes eligen, el pedido te llega por WhatsApp.">
+<link rel="icon" href="/bateas.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<style>
+  :root {
+    --ink: #141310;
+    --ink-soft: #2b2924;
+    --paper: #f3ede2;
+    --paper-2: #e9e0d0;
+    --white: #fffdf8;
+    --crate: #b5652b;
+    --crate-dark: #8f4c1e;
+    --red: #e2492f;
+    --mustard: #f2b33d;
+    --teal: #3f8f8a;
+    --green: #1f7a4d;
+    --muted: #6b665c;
+    --line: #d9cfbd;
+    --radius: 14px;
+    --font: "Archivo", "Arial Narrow", system-ui, sans-serif;
+    color-scheme: light;  /* identidad de papel y madera: un solo tema a propósito */
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; font: 400 17px/1.55 var(--font); background: var(--paper); color: var(--ink); }
+  h1, h2, h3 { font-stretch: 72%; font-weight: 900; line-height: 1.02; margin: 0; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  a { color: inherit; }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+  .eyebrow { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--crate); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 15px 24px; border-radius: 999px;
+    font-weight: 800; font-size: 1.02rem; text-decoration: none; border: 2px solid var(--ink); transition: transform 0.1s, background 0.15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: var(--ink-soft); }
+  .btn-ghost { background: transparent; color: var(--ink); }
+  .btn-ghost:hover { background: var(--white); }
+  :focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+
+  /* barra */
+  .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: rgba(243, 237, 226, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .nav .wrap { display: flex; align-items: center; gap: 28px; height: 68px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand img { width: 38px; height: 38px; }
+  .brand span { font-size: 1.7rem; font-weight: 900; font-stretch: 72%; letter-spacing: -0.02em; }
+  .nav nav { display: flex; gap: 24px; margin-left: auto; font-weight: 600; font-size: 0.95rem; }
+  .nav nav a { text-decoration: none; color: var(--muted); }
+  .nav nav a:hover { color: var(--ink); }
+  .nav .btn { padding: 10px 18px; font-size: 0.92rem; }
+
+  /* portada */
+  .hero { padding: 64px 0 80px; overflow: hidden; }
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: center; }
+  .slogan { display: inline-block; font-weight: 800; font-stretch: 85%; font-size: 1.05rem; background: var(--ink); color: var(--mustard); padding: 6px 14px; border-radius: 4px; transform: rotate(-1.5deg); margin-bottom: 22px; }
+  .hero h1 { font-size: clamp(3rem, 6.6vw, 5.6rem); margin-bottom: 22px; }
+  .hero h1 em { font-style: normal; color: var(--red); }
+  .hero .lead { font-size: 1.2rem; color: var(--ink-soft); max-width: 34em; margin-bottom: 30px; }
+  .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero .note { margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
+
+  /* maqueta de una tienda */
+  .mock { position: relative; }
+  .mock::before { /* un vinilo detrás */
+    content: ""; position: absolute; width: 440px; height: 440px; right: -150px; top: -70px; border-radius: 50%; z-index: 0;
+    background: radial-gradient(circle, var(--ink) 0 2%, var(--red) 2.6% 17%, #0b0a08 17.6% 18.6%, transparent 19%),
+                repeating-radial-gradient(circle, #0b0a08 0 2px, #26241f 2px 4px);
+  }
+  .window { position: relative; z-index: 1; background: var(--white); border-radius: 12px; overflow: hidden; border: 2px solid var(--ink); box-shadow: 10px 10px 0 var(--ink); }
+  .window-bar { display: flex; gap: 6px; padding: 10px 12px; background: var(--paper-2); border-bottom: 2px solid var(--ink); }
+  .window-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--ink); opacity: 0.25; }
+  .window-bar span { margin-left: 10px; font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+  .shop-top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--ink); color: var(--white); border-bottom: 3px solid var(--teal); }
+  .shop-top b { font-stretch: 75%; font-weight: 900; font-size: 1.05rem; }
+  .shop-top .search { flex: 1; height: 24px; border-radius: 6px; background: rgba(255, 255, 255, 0.92); }
+  .shop-body { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 12px; padding: 12px; }
+  .banner { border-radius: 8px; padding: 16px; color: var(--white); background: linear-gradient(120deg, #1d3b3a, var(--teal) 60%, #6bb3a8); margin-bottom: 12px; }
+  .banner b { display: block; font-stretch: 72%; font-weight: 900; font-size: 1.35rem; line-height: 1; }
+  .banner small { opacity: 0.9; font-size: 0.72rem; }
+  .banner .pill { display: inline-block; margin-top: 8px; background: var(--mustard); color: var(--ink); font-weight: 800; font-size: 0.66rem; padding: 3px 9px; border-radius: 999px; }
+  .shelf-title { font-stretch: 75%; font-weight: 900; font-size: 0.95rem; margin-bottom: 8px; }
+  .shelf { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 5px; background: var(--white); }
+  .cover { aspect-ratio: 1; border-radius: 3px; margin-bottom: 5px; position: relative; }
+  .cover::after { content: "▶"; position: absolute; right: 4px; bottom: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 7px; display: grid; place-items: center; padding-left: 1px; }
+  .c1 { background: radial-gradient(circle at 70% 40%, var(--mustard) 0 22%, transparent 23%), var(--red); }
+  .c2 { background: repeating-linear-gradient(45deg, var(--ink) 0 6px, var(--paper-2) 6px 12px); }
+  .c3 { background: radial-gradient(circle, var(--paper) 0 10%, var(--ink) 11% 30%, var(--teal) 31%); }
+  .c4 { background: linear-gradient(160deg, var(--mustard), var(--crate) 70%); }
+  .card i { display: block; height: 5px; border-radius: 3px; background: var(--ink); margin-bottom: 3px; }
+  .card i + i { width: 70%; opacity: 0.35; }
+  .card .add { height: 13px; border-radius: 4px; background: var(--ink); margin-top: 5px; }
+  .card.in { border-color: var(--green); }
+  .card.in .add { background: var(--white); border: 1.5px solid var(--green); }
+  .cart { border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 0.64rem; align-self: start; }
+  .cart b { font-stretch: 75%; font-weight: 900; font-size: 0.85rem; display: block; margin-bottom: 6px; }
+  .cart .line { height: 5px; border-radius: 3px; background: var(--line); margin-bottom: 5px; }
+  .cart .wa { margin-top: 8px; background: var(--green); color: #fff; border-radius: 5px; text-align: center; padding: 5px 4px; font-weight: 800; }
+  .bubble {
+    position: absolute; z-index: 2; left: -34px; bottom: -30px; max-width: 250px; background: #dcf8c6; border-radius: 12px 12px 12px 2px;
+    padding: 10px 12px; font-size: 0.8rem; box-shadow: 0 8px 24px rgba(20, 19, 16, 0.22); border: 1px solid #b8e0a0; line-height: 1.4;
+  }
+  .bubble b { display: block; font-size: 0.72rem; color: var(--green); margin-bottom: 2px; }
+
+  /* franja */
+  .strip { background: var(--ink); color: var(--paper); padding: 18px 0; overflow: hidden; }
+  .strip .wrap { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; font-weight: 800; font-stretch: 80%; font-size: 1.05rem; letter-spacing: 0.02em; }
+  .strip span::before { content: "●"; color: var(--mustard); margin-right: 10px; font-size: 0.7em; vertical-align: middle; }
+
+  section.block { padding: 96px 0; }
+  section[id] { scroll-margin-top: 72px; }  /* el menú es fijo: el título no queda debajo */
+  .block-head { max-width: 640px; margin-bottom: 48px; }
+  .block-head h2 { font-size: clamp(2.3rem, 4.6vw, 3.6rem); margin: 10px 0 14px; }
+  .block-head p { color: var(--ink-soft); font-size: 1.1rem; }
+
+  /* pasos */
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; counter-reset: step; }
+  .step { background: var(--white); border: 2px solid var(--ink); border-radius: var(--radius); padding: 28px; position: relative; }
+  .step::before {
+    counter-increment: step; content: "0" counter(step); display: block; font-weight: 900; font-stretch: 72%; font-size: 3.2rem; line-height: 1;
+    color: var(--crate); margin-bottom: 14px;
+  }
+  .step h3 { font-size: 1.6rem; margin-bottom: 10px; }
+  .step p { color: var(--ink-soft); }
+
+  /* lo que trae */
+  .features { background: var(--paper-2); }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .feature { background: var(--white); border-radius: var(--radius); padding: 26px; border: 1px solid var(--line); }
+  .feature .ico {
+    --c: var(--red); width: 48px; height: 48px; border-radius: 50%; margin-bottom: 16px;
+    background: radial-gradient(circle, var(--paper) 0 6%, var(--c) 7% 46%, #0b0a08 47% 49%, transparent 50%),
+                repeating-radial-gradient(circle, #0b0a08 0 2px, #2b2924 2px 3.5px);
+  }
+  .feature:nth-child(2) .ico { --c: var(--mustard); }
+  .feature:nth-child(3) .ico { --c: var(--teal); }
+  .feature:nth-child(4) .ico { --c: var(--crate); }
+  .feature:nth-child(5) .ico { --c: #8a6bb8; }
+  .feature:nth-child(6) .ico { --c: var(--green); }
+  .feature h3 { font-size: 1.4rem; margin-bottom: 8px; }
+  .feature p { color: var(--ink-soft); font-size: 0.98rem; }
+
+  /* quiénes somos */
+  .about .wrap { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 64px; align-items: center; }
+  .cover-card { /* la tapa de un disco: "Tobías", lado A */
+    position: relative; aspect-ratio: 1; max-width: 420px; width: 100%; background: var(--ink); color: var(--paper);
+    border-radius: 6px; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
+    box-shadow: 10px 10px 0 var(--crate);
+  }
+  .cover-card::after {
+    content: ""; position: absolute; width: 78%; aspect-ratio: 1; right: -34%; top: 11%; border-radius: 50%;
+    background: radial-gradient(circle, var(--ink) 0 2.5%, var(--mustard) 3% 18%, #0b0a08 18.6% 19.6%, transparent 20%),
+                repeating-radial-gradient(circle, #0b0a08 0 2px, #26241f 2px 4px);
+  }
+  .cover-card .side { position: relative; z-index: 1; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mustard); }
+  .cover-card .name { position: relative; z-index: 1; font-weight: 900; font-stretch: 65%; font-size: clamp(3.4rem, 8vw, 5.4rem); line-height: 0.9; }
+  .cover-card .tags { position: relative; z-index: 1; font-size: 0.95rem; color: #d8d0c0; }
+  .about h2 { font-size: clamp(2.3rem, 4.6vw, 3.6rem); margin: 10px 0 22px; text-wrap: balance; }
+  .about p { font-size: 1.12rem; color: var(--ink-soft); margin-bottom: 16px; max-width: 36em; }
+  .about p:last-of-type { margin-bottom: 0; }
+  .about .sign { margin-top: 24px; font-weight: 800; font-stretch: 85%; }
+
+  /* manifiesto */
+  .manifesto { background: var(--ink); color: var(--paper); position: relative; overflow: hidden; }
+  .manifesto::after {
+    content: ""; position: absolute; width: 620px; height: 620px; left: -260px; bottom: -330px; border-radius: 50%; opacity: 0.5;
+    background: radial-gradient(circle, var(--ink) 0 2%, var(--mustard) 2.6% 17%, #0b0a08 17.6% 18.6%, transparent 19%),
+                repeating-radial-gradient(circle, #0b0a08 0 2px, #26241f 2px 4px);
+  }
+  .manifesto .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 56px; align-items: center; }
+  .manifesto h2 { font-size: clamp(2.8rem, 6vw, 5rem); }
+  .manifesto h2 span { color: var(--mustard); display: block; }
+  .manifesto p { font-size: 1.15rem; color: #d8d0c0; margin-bottom: 16px; }
+  .manifesto p strong { color: var(--paper); }
+
+  /* preguntas */
+  .faq { max-width: 820px; }
+  .faq details { border-bottom: 2px solid var(--ink); padding: 20px 0; }
+  .faq summary { cursor: pointer; font-weight: 800; font-size: 1.2rem; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; font-size: 1.6rem; line-height: 1; color: var(--crate); transition: transform 0.2s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { margin-top: 12px; color: var(--ink-soft); max-width: 42em; }
+
+  /* cierre */
+  .final { padding: 0 0 96px; }
+  .final .box {
+    background: var(--red); color: var(--white); border-radius: 22px; padding: 64px 48px; text-align: center; border: 2px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--ink);
+  }
+  .final h2 { font-size: clamp(2.4rem, 5vw, 4rem); margin-bottom: 14px; }
+  .final p { font-size: 1.15rem; margin-bottom: 30px; opacity: 0.95; }
+  .final .btn-primary { background: var(--ink); border-color: var(--ink); }
+  .final .btn-ghost { color: var(--white); border-color: var(--white); }
+  .final .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+  .final .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: 0.9rem; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; }
+  footer .brand span { font-size: 1.3rem; color: var(--ink); }
+  footer .brand img { width: 28px; height: 28px; }
+
+  @media (max-width: 960px) {
+    .hero .wrap, .manifesto .wrap, .about .wrap { grid-template-columns: 1fr; gap: 48px; }
+    .steps, .grid { grid-template-columns: 1fr 1fr; }
+    .nav nav { display: none; }
+    .nav .btn { margin-left: auto; }
+  }
+  @media (max-width: 620px) {
+    body { font-size: 16px; }
+    .hero { padding: 40px 0 72px; }
+    .steps, .grid { grid-template-columns: 1fr; }
+    section.block { padding: 68px 0; }
+    .mock::before { width: 300px; height: 300px; right: -120px; top: -40px; }
+    .shop-body { grid-template-columns: 1fr; }
+    .cart { display: none; }
+    .bubble { left: 8px; bottom: -40px; max-width: 220px; }
+    .final .box { padding: 44px 22px; }
+    .strip .wrap { gap: 10px 22px; font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#"><img src="/bateas.svg" alt=""><span>bateas</span></a>
+    <nav aria-label="Secciones">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#que-trae">Qué trae</a>
+      <a href="#quienes-somos">Quiénes somos</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <a class="btn btn-primary" href="#contacto">Quiero mi tienda</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="slogan">Por melómanos, para melómanos</span>
+        <h1>Tu disquería, online en <em>un minuto.</em></h1>
+        <p class="lead">Subís el Excel que te manda el distribuidor y listo: tus clientes recorren tu batea online, arman el pedido y te llega ordenado por WhatsApp.</p>
+        <div class="ctas">
+          <a class="btn btn-primary" href="#contacto">Quiero mi tienda →</a>
+          <a class="btn btn-ghost" href="#como-funciona">Ver cómo funciona</a>
+        </div>
+        <p class="note">Con tu nombre, tu logo y tus colores. Sin programar nada.</p>
+      </div>
+
+      <div class="mock" aria-hidden="true">
+        <div class="window">
+          <div class="window-bar"><i></i><i></i><i></i><span>bateas.com.ar/tu-disqueria</span></div>
+          <div class="shop-top"><b>Tu Disquería</b><span class="search"></span></div>
+          <div class="shop-body">
+            <div>
+              <div class="banner"><b>Preventa de octubre</b><small>Llegaron los importados del mes</small><br><span class="pill">Ver preventa</span></div>
+              <div class="shelf-title">Más vendidos</div>
+              <div class="shelf">
+                <div class="card"><div class="cover c1"></div><i></i><i></i><div class="add"></div></div>
+                <div class="card in"><div class="cover c2"></div><i></i><i></i><div class="add"></div></div>
+                <div class="card"><div class="cover c3"></div><i></i><i></i><div class="add"></div></div>
+                <div class="card in"><div class="cover c4"></div><i></i><i></i><div class="add"></div></div>
+              </div>
+            </div>
+            <div class="cart"><b>Tu pedido · 2</b><div class="line"></div><div class="line"></div><div class="wa">Consultar</div></div>
+          </div>
+        </div>
+        <div class="bubble"><b>Pedido nuevo · WhatsApp</b>Hola! Quiero estos discos:<br>#128 – vinilo 2LP<br>#342 – CD + póster</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip" aria-hidden="true">
+    <div class="wrap"><span>Tu marca</span><span>Cualquier Excel</span><span>Pedidos por WhatsApp</span><span>Preventas con código</span><span>Escuchá antes de pedir</span></div>
+  </div>
+
+  <section id="como-funciona" class="block">
+    <div class="wrap">
+      <div class="block-head">
+        <span class="eyebrow">Cómo funciona</span>
+        <h2>De la planilla a la batea, en tres pasos.</h2>
+        <p>Nada de cargar disco por disco. Bateas entiende el Excel tal cual te llega, aunque venga con el logo del distribuidor arriba o las columnas en inglés.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>Subís el Excel</h3>
+          <p>El del distribuidor, sin tocarlo. Detectamos solos dónde está el artista, el título, el precio o el código de barras. Vos solo confirmás.</p>
+        </div>
+        <div class="step">
+          <h3>Armás tu vidriera</h3>
+          <p>Banners para la preventa del mes, carruseles como "Más vendidos" o "Rock nacional" y el catálogo completo con buscador. En el orden que quieras.</p>
+        </div>
+        <div class="step">
+          <h3>Te llegan los pedidos</h3>
+          <p>Tu cliente arma la lista y la manda por WhatsApp con el mensaje que vos diseñaste y el número de cada disco. Ordenado, sin "el de la tapa roja".</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="que-trae" class="block features">
+    <div class="wrap">
+      <div class="block-head">
+        <span class="eyebrow">Qué trae</span>
+        <h2>Pensado para cómo trabaja una disquería.</h2>
+        <p>No es un marketplace: es tu tienda. Tus clientes no ven a la competencia al lado.</p>
+      </div>
+      <div class="grid">
+        <div class="feature"><div class="ico" aria-hidden="true"></div><h3>Tu marca, tu link</h3><p>Tu nombre, tu logo, tus colores y tu propia dirección. El cliente entra a tu disquería, no a una plataforma.</p></div>
+        <div class="feature"><div class="ico" aria-hidden="true"></div><h3>Cualquier Excel</h3><p>Columnas en inglés o en castellano, encabezado donde caiga y columnas propias como "Insert" o "Precio USD".</p></div>
+        <div class="feature"><div class="ico" aria-hidden="true"></div><h3>Preventa con código</h3><p>Lista privada para los clientes de la casa, con fecha de cierre. O pública, si preferís que entre cualquiera.</p></div>
+        <div class="feature"><div class="ico" aria-hidden="true"></div><h3>Escuchar antes de pedir</h3><p>Tapas y fragmentos de cada tema, sin salir de la tienda. El que escucha, se anima a pedir.</p></div>
+        <div class="feature"><div class="ico" aria-hidden="true"></div><h3>Banners y secciones</h3><p>Destacá la preventa, armá tus recomendados y ordená la portada a tu gusto. Se ve bien en la compu y en el celu.</p></div>
+        <div class="feature"><div class="ico" aria-hidden="true"></div><h3>Pedidos por WhatsApp</h3><p>Seguís vendiendo por donde ya vendés. Bateas ordena lo que entra: cada pedido llega listo para cotizar.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quienes-somos" class="block about">
+    <div class="wrap">
+      <div class="cover-card" aria-hidden="true">
+        <span class="side">Lado A · Quiénes somos</span>
+        <span class="name">Tobías</span>
+        <span class="tags">Melómano · Audiófilo · Fundador de Bateas</span>
+      </div>
+      <div>
+        <span class="eyebrow">Quiénes somos</span>
+        <h2>Hola, soy Tobías.</h2>
+        <p>Melómano y audiófilo. Cada vez que me llegaba por WhatsApp el Excel de una disquería, o abría la planilla de Google con el catálogo del mes, me pasaba lo mismo: miles de filas, ni una tapa, y la sensación de que en algún lugar de esa lista había discos increíbles que nunca iba a encontrar.</p>
+        <p>Yo quería recorrerlo todo, con la misma calma con la que revolvés una batea un sábado a la tarde. Así que me armé una herramienta para eso: subir la lista y poder buscar, filtrar, ver las tapas y escuchar cada disco antes de decidir.</p>
+        <p>Bateas nació como una herramienta mía. Hoy la quiero compartir con las disquerías, para que sus clientes vivan esa misma experiencia, y con cada melómano que alguna vez se perdió en una planilla.</p>
+        <p class="sign">Tobías</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block manifesto">
+    <div class="wrap">
+      <h2>Por melómanos, <span>para melómanos.</span></h2>
+      <div>
+        <p>Conocemos de memoria los Excels de cinco mil filas mandados por WhatsApp, la búsqueda con el dedo en el celular y los pedidos que llegan como "el tercero de la página cuarenta".</p>
+        <p>Sabemos que <strong>una edición con póster no es lo mismo que la que viene en caja sticker</strong>, que la preventa cierra el viernes y que el cliente de la casa es oro.</p>
+        <p>Por eso Bateas no te pide que cambies cómo trabajás. <strong>Te da tu batea, online.</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="preguntas" class="block">
+    <div class="wrap">
+      <div class="faq">
+      <div class="block-head">
+        <span class="eyebrow">Preguntas</span>
+        <h2>Lo que nos preguntan siempre.</h2>
+      </div>
+      <details>
+        <summary>¿Necesito saber de computación?</summary>
+        <p>No. Si sabés mandar un Excel por WhatsApp, sabés usar Bateas: subís el archivo, confirmás las columnas y tu tienda queda armada.</p>
+      </details>
+      <details>
+        <summary>¿Mis clientes pagan online?</summary>
+        <p>Hoy no: el pedido te llega por WhatsApp y vos cotizás y cobrás como siempre. Es ideal para preventas, donde primero confirmás qué llegó y a qué precio.</p>
+      </details>
+      <details>
+        <summary>¿Puedo seguir en otros marketplaces?</summary>
+        <p>Claro. Muchas disquerías tienen su stock en un marketplace y hacen la preventa del mes en su propia tienda, donde el cliente es suyo.</p>
+      </details>
+      <details>
+        <summary>¿Qué pasa cuando llega la lista del mes siguiente?</summary>
+        <p>Subís el Excel nuevo y Bateas se acuerda de cómo lo configuraste. Tus secciones mantienen los discos que siguen en la lista y te avisa cuáles ya no están.</p>
+      </details>
+      <details>
+        <summary>¿Se ve bien en el celular?</summary>
+        <p>Sí. La mayoría de tus clientes va a entrar desde el celu, así que todo está pensado primero para la pantalla chica.</p>
+      </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="final">
+    <div class="wrap">
+      <div class="box">
+        <h2>Tu batea te está esperando.</h2>
+        <p>Escribinos y te armamos una tienda de prueba con tu propio Excel.</p>
+        <div class="ctas">
+          <!-- TODO: poner el número de WhatsApp y el mail de contacto reales -->
+          <a class="btn btn-primary" href="https://wa.me/5490000000000?text=Hola!%20Quiero%20mi%20tienda%20en%20Bateas" target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+          <a class="btn btn-ghost" href="mailto:hola@bateas.com.ar">hola@bateas.com.ar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="/bateas.svg" alt=""><span>bateas</span></a>
+    <span>Por melómanos, para melómanos.</span>
+  </div>
+</footer>
+
+</body>
+</html>

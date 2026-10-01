@@ -1,0 +1,11 @@
+# lo único que necesita la imagen es backend/app, backend/requirements.txt y frontend/public
+.env
+.env.*
+.git
+**/__pycache__
+backend/tests
+backend/data
+*.db
+*.bak.db
+.atl
+.claude

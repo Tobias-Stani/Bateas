@@ -1,0 +1,89 @@
+"""Validaciones reutilizables: devuelven el valor limpio o cortan con un 400 y un mensaje para la persona."""
+from datetime import datetime, timezone
+
+from fastapi import HTTPException
+
+from .config import COLOR, RESERVED, SLUG
+
+
+def fail(message):
+    raise HTTPException(400, message)
+
+
+def digits(value):
+    return "".join(c for c in value if c.isdigit())
+
+
+def text(value, low, high, message):
+    clean = value.strip()
+    if not low <= len(clean) <= high:
+        fail(message)
+    return clean
+
+
+def tenant_name(value):
+    return text(value, 2, 80, "El nombre tiene que tener entre 2 y 80 caracteres.")
+
+
+def slug(value):
+    clean = value.strip().lower()
+    if not SLUG.fullmatch(clean) or clean in RESERVED:
+        fail("La dirección solo puede tener letras minúsculas, números y guiones (2 a 40), sin guion al principio ni al final.")
+    return clean
+
+
+def client_code(value):
+    return text(value, 4, 64, "El código tiene que tener entre 4 y 64 caracteres.")
+
+
+def admin_password(value):
+    if len(value) < 6:
+        fail("La contraseña del admin tiene que tener al menos 6 caracteres.")
+    return value
+
+
+def whatsapp(value):
+    # se guardan solo los dígitos: acepta "+54 9 11 1234-5678"
+    number = digits(value)
+    if not 8 <= len(number) <= 15:
+        fail("El número tiene que tener código de país y área, por ejemplo 54 9 11 1234 5678.")
+    return number
+
+
+def color(value):
+    if not COLOR.fullmatch(value):
+        fail("Los colores tienen que ser hexadecimales, por ejemplo #03a0c4.")
+    return value
+
+
+def logo(value):
+    clean = value.strip()
+    local = clean.startswith("/") and not clean.startswith("//")  # "//host/x" es otro sitio, no una ruta
+    if clean and not ((local or clean.startswith("https://")) and len(clean) <= 500):
+        fail("El logo tiene que ser una ruta (/logo.svg) o una URL https.")
+    return clean or None  # vacío = logo por defecto
+
+
+def closing_date(value):
+    # fecha ISO con zona (el navegador manda UTC), o "" para quitar el cierre
+    clean = value.strip()
+    if not clean:
+        return ""
+    try:
+        when = datetime.fromisoformat(clean)
+    except ValueError:
+        fail("La fecha no es válida.")
+    if when.tzinfo is None:
+        fail("La fecha tiene que incluir la zona horaria.")
+    return when.astimezone(timezone.utc).isoformat(timespec="minutes")
+
+
+def message(template, line):
+    template, line = template.strip(), line.strip()
+    if "{discos}" not in template:
+        fail("El mensaje tiene que incluir {discos}, que es donde va la lista.")
+    if not line:
+        fail("La línea por disco no puede quedar vacía.")
+    if len(template) > 2000 or len(line) > 300:
+        fail("El mensaje es demasiado largo.")
+    return template, line

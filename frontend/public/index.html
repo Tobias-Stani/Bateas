@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tienda de discos</title>
+<link rel="icon" href="/logo.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .filters select { width: auto; min-width: 170px; padding: 10px 12px; }
+  .filters .hint { margin-left: auto; }
+  .search { flex: 1; min-width: 220px; max-width: 560px; position: relative; }
+  .search input { border-color: transparent; padding-right: 40px; }
+  .search kbd { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; font: inherit; font-size: 0.8rem; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+  .layout > section { min-width: 0; }  /* si no, el carrusel ensancha la columna (y la página) en el celular */
+
+  .list { background: var(--white); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .row {
+    --cover: 96px;
+    display: grid; grid-template-columns: var(--cover) minmax(0, 2.2fr) minmax(0, 1.4fr) 132px; gap: 18px; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  /* tapa con la etiqueta de precio pegada en la esquina; sin tapa queda solo la etiqueta */
+  .sleeve { position: relative; width: var(--cover); }
+  .sleeve img { display: none; width: var(--cover); height: var(--cover); object-fit: cover; border-radius: 3px; box-shadow: 0 2px 6px rgba(19, 20, 24, 0.25); }
+  .sleeve.has-cover img { display: block; animation: show 0.25s ease-out; }
+  .sleeve.has-cover .sticker { position: absolute; left: -6px; bottom: -6px; }
+  @keyframes show { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .sleeve.has-cover img { animation: none; } }
+  .row:last-child { border-bottom: 0; }
+  .row.in { background: #fff6e0; }
+  .row .artist { font-weight: 700; }
+  .row .title { color: var(--ink-soft); }
+  .row .listen { display: inline-block; margin-top: 4px; font-size: 0.88rem; font-weight: 600; color: var(--accent-dark); }
+  .row .meta { font-size: 0.9rem; color: var(--muted); }
+  .row .meta b { color: var(--ink); font-weight: 600; }
+  .row .btn { width: 100%; }
+  .row.in .btn { background: var(--white); color: var(--green); border-color: var(--green); }
+
+  .home-block, #catalog { scroll-margin-top: 96px; }  /* la barra superior es fija */
+  /* banners: slider arriba de la portada */
+  .hero { position: relative; border-radius: 14px; overflow: hidden; margin-bottom: 28px; background: var(--ink); }
+  .hero-track { display: flex; transition: transform 0.55s ease; }
+  .hero-slide { flex: 0 0 100%; position: relative; aspect-ratio: 3 / 1; }
+  .hero-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .hero-copy {
+    position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 10px;
+    padding: 0 76px; color: var(--white); background: linear-gradient(90deg, rgba(10, 10, 12, 0.72), rgba(10, 10, 12, 0.25) 55%, transparent 80%);
+  }
+  .hero-copy > * { max-width: 58%; }
+  .hero-copy h2 { font-size: clamp(1.5rem, 3.2vw, 2.8rem); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); }
+  .hero-copy p { font-size: clamp(0.92rem, 1.4vw, 1.15rem); color: #e6e8ea; }
+  .hero-btn { margin-top: 6px; background: var(--accent); border-color: var(--accent); }
+  .hero-btn:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+  .hero-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
+    background: rgba(255, 255, 255, 0.85); color: var(--ink); font-size: 1.4rem; line-height: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  .hero-nav:hover { background: var(--white); }
+  .hero-nav.prev { left: 14px; }
+  .hero-nav.next { right: 14px; }
+  .hero-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; }
+  .hero-dots button { width: 10px; height: 10px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: rgba(255, 255, 255, 0.5); }
+  .hero-dots button[aria-current="true"] { background: var(--white); width: 26px; border-radius: 5px; }
+  @media (prefers-reduced-motion: reduce) { .hero-track { transition: none; } }
+
+  /* secciones: carruseles armados por la disquería */
+  .shelf { margin-bottom: 28px; }
+  .shelf-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .shelf-head h2 { margin-right: auto; }
+  .shelf-nav { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--line); background: var(--white); font-size: 1.3rem; line-height: 1; cursor: pointer; color: var(--ink); }
+  .shelf-nav:hover { border-color: var(--accent); }
+  .shelf-track {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 172px; gap: 16px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 4px 2px 14px; scrollbar-width: thin;
+  }
+  .card {
+    --cover: 150px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 4px;
+    background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-width: 0;
+  }
+  .card.in { border-color: var(--green); background: #f3faf6; }
+  /* sin tapa: un vinilo con el color de la marca, nunca un hueco */
+  .card .sleeve {
+    width: var(--cover); height: var(--cover); border-radius: 4px; overflow: hidden; margin-bottom: 6px;
+    background:
+      radial-gradient(circle, var(--ink) 0 2%, var(--accent) 2.5% 17%, #08090c 17.5% 18.5%, transparent 19%),
+      repeating-radial-gradient(circle, #08090c 0 2px, #202228 2px 4px);
+  }
+  .card .sleeve img { position: absolute; inset: 0; }
+  .card .sleeve .sticker, .card .sleeve.has-cover .sticker { position: absolute; left: 6px; bottom: 6px; }
+  .card .c-artist, .card .c-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.92rem; line-height: 1.3; }
+  .card .c-artist { font-weight: 700; }
+  .card .c-title { color: var(--ink-soft); }
+  .card .price { font-size: 1rem; margin-top: 2px; }
+  .card .btn { margin-top: auto; width: 100%; }
+  .card .c-meta { color: var(--muted); font-size: 0.82rem; margin-bottom: 8px; }
+  .card.in .btn { background: var(--white); color: var(--green); border-color: var(--green); }
+
+  /* escuchar: aparece solo si Deezer encontró el álbum */
+  .row .actions-line { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
+  .row .play { border: 0; background: var(--accent); color: var(--white); font: inherit; font-weight: 700; font-size: 0.85rem; border-radius: 999px; padding: 4px 12px 4px 10px; cursor: pointer; }
+  .row .play:hover { background: var(--accent-dark); }
+  .row .listen { margin-top: 0; }
+  .card-play {
+    position: absolute; right: 8px; bottom: 8px; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--accent); color: var(--white); font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); padding-left: 3px;
+  }
+  .card-play:hover { background: var(--accent-dark); transform: scale(1.06); }
+
+  .player { border: 0; padding: 0; border-radius: 16px; width: min(440px, calc(100% - 24px)); max-height: min(640px, calc(100vh - 32px)); color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); }
+  .player::backdrop { background: rgba(19, 20, 24, 0.6); }
+  .player-box { display: flex; flex-direction: column; max-height: inherit; }
+  .player header { display: flex; gap: 14px; align-items: center; padding: 18px; background: var(--ink); color: var(--white); border-bottom: 4px solid var(--accent); }
+  .player header img { width: 72px; height: 72px; border-radius: 4px; object-fit: cover; flex: none; }
+  .player header div { flex: 1; min-width: 0; }
+  .player header b { display: block; font-size: 1.1rem; line-height: 1.25; }
+  .player header span { color: #b9bdc4; font-size: 0.92rem; }
+  .player-x { align-self: flex-start; background: none; border: 0; color: var(--white); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+  .player-tracks { list-style: none; margin: 0; padding: 6px 8px; overflow-y: auto; flex: 1; }
+  .player-tracks button {
+    width: 100%; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; text-align: left;
+    border: 0; background: none; padding: 10px; border-radius: 8px; cursor: pointer; font: inherit; color: var(--ink);
+  }
+  .player-tracks button:hover:not(:disabled) { background: var(--paper); }
+  .player-tracks button:disabled { opacity: 0.4; cursor: default; }
+  .player-tracks button.on { background: #eef7fa; font-weight: 700; }
+  .player-tracks .ico { color: var(--accent); font-size: 0.8rem; text-align: center; }
+  .player-tracks .dur { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  .player-tracks .bar { grid-column: 2 / -1; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .player-tracks .bar span { display: block; height: 100%; width: 0; background: var(--accent); }
+  .player-msg { padding: 24px 12px; text-align: center; color: var(--muted); }
+  .player footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--line); font-size: 0.85rem; color: var(--muted); }
+  .player footer a { color: var(--accent-dark); font-weight: 600; }
+
+  .empty { padding: 48px 24px; text-align: center; }
+  .empty h3 { margin-bottom: 8px; }
+
+  .pager { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 20px; }
+
+  .cart { position: sticky; top: 88px; }
+  .cart header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .cart ul { list-style: none; margin: 0 0 16px; padding: 0; max-height: 46vh; overflow: auto; }
+  .cart li { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: 0.92rem; }
+  .cart li small { color: var(--muted); display: block; }
+  .cart .actions { display: grid; gap: 8px; }
+  .cart .hint { margin-top: 12px; }
+
+  .price { display: block; font-weight: 800; font-size: 1.05rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .deadline { margin: -12px 0 24px; color: var(--highlight); font-weight: 700; }
+  #cart-deadline { font-weight: 600; color: var(--ink); }
+  .cart-bar, .cart-close { display: none; }
+  .loading { opacity: 0.5; transition: opacity 0.2s; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .row { --cover: 84px; grid-template-columns: var(--cover) 1fr; }
+    .shelf-track { grid-auto-columns: 148px; gap: 12px; }
+    .card { --cover: 126px; }
+    .shelf-nav { display: none; }  /* en el celular se desliza con el dedo */
+    .hero-slide { aspect-ratio: 2 / 1; }
+    .hero-copy { padding: 0 20px; gap: 6px; }
+    .hero-copy > * { max-width: 88%; }
+    .hero-copy p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .hero-btn { padding: 8px 14px; font-size: 0.9rem; }
+    .hero-nav { display: none; }
+    .row .sleeve { grid-row: span 2; align-self: start; }
+    .row .meta { grid-column: 2; }
+    .row .btn { grid-column: 1 / -1; }
+    .filters .hint { margin-left: 0; width: 100%; }
+    .cart { position: fixed; inset: auto 0 0 0; top: auto; border-radius: 14px 14px 0 0; max-height: 80vh; overflow: auto; z-index: 20; box-shadow: 0 -8px 30px rgba(22, 35, 63, 0.25); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+    .cart:not(.open) { display: none; }
+    .cart-close { display: inline; }
+    .cart-bar {
+      display: flex; position: fixed; inset: auto 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; z-index: 15;
+      justify-content: space-between; box-shadow: 0 6px 20px rgba(22, 35, 63, 0.35);
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ingreso -->
+<section id="gate" class="gate" hidden>
+  <div class="gate-box">
+    <img class="logo" src="/logo.svg" alt="Tienda de música" data-brand-logo>
+    <h1 id="gate-title">Los discos que llegan este mes</h1>
+    <p id="gate-lead" class="lead">Elegí los que querés y mandá el pedido por WhatsApp. Te respondemos con la cotización.</p>
+    <p id="deadline" class="deadline" hidden></p>
+    <form id="login" novalidate>
+      <label for="code">Código de acceso</label>
+      <input id="code" class="field" type="password" autocomplete="current-password" required aria-describedby="login-error">
+      <p id="login-error" class="error" role="alert"></p>
+      <button class="btn">Entrar a la tienda</button>
+    </form>
+  </div>
+</section>
+
+<!-- tienda -->
+<div id="store" hidden>
+  <header class="topbar">
+    <a class="brand" data-link=""><img src="/logo.svg" alt="" data-brand-logo><span data-brand></span></a>
+    <div class="search">
+      <input id="q" class="field" type="search" placeholder="Buscar por artista, título o sello" aria-label="Buscar discos">
+      <kbd title="Atajo: tecla /">/</kbd>
+    </div>
+    <span class="spacer"></span>
+    <button id="logout" class="btn btn-outline btn-sm">Salir</button>
+  </header>
+
+  <main class="page">
+
+    <div class="layout">
+      <section>
+        <!-- portada armada por la disquería: banners, secciones y el catálogo en su orden -->
+        <div id="home"></div>
+        <div id="catalog">
+        <div class="filters">
+          <select id="media" class="field" aria-label="Formato"><option value="">Todos los formatos</option></select>
+          <select id="genre" class="field" aria-label="Género"><option value="">Todos los géneros</option></select>
+          <button id="clear" class="btn-text" hidden>Quitar filtros</button>
+          <p id="status" class="hint" aria-live="polite"></p>
+        </div>
+        <div id="list" class="list"></div>
+        <nav class="pager" aria-label="Páginas">
+          <button id="prev" class="btn btn-outline btn-sm">Anterior</button>
+          <span id="pageinfo" class="hint"></span>
+          <button id="next" class="btn btn-outline btn-sm">Siguiente</button>
+        </nav>
+        </div>
+      </section>
+
+      <aside id="cart" class="panel cart" aria-label="Tu pedido">
+        <header>
+          <h2>Tu pedido</h2>
+          <span id="count" class="sticker">0</span>
+          <span class="spacer" style="flex:1"></span>
+          <button id="close-cart" class="btn-text cart-close" aria-label="Cerrar pedido">Cerrar</button>
+        </header>
+        <ul id="cart-items"></ul>
+        <p id="cart-empty" class="hint">Todavía no agregaste discos. Buscá lo que te interese y tocá <b>Agregar</b>.</p>
+        <div class="actions">
+          <button id="wa" class="btn btn-whatsapp">Consultar cotización</button>
+          <button id="copy" class="btn btn-outline">Copiar lista</button>
+          <button id="empty" class="btn-text danger">Vaciar pedido</button>
+        </div>
+        <p class="hint">Se abre WhatsApp con la lista escrita. La disquería te responde con la cotización.</p>
+        <p id="cart-deadline" class="hint" hidden></p>
+      </aside>
+    </div>
+  </main>
+
+  <button id="cart-bar" class="btn cart-bar">Ver pedido <span id="count-bar" class="sticker">0</span></button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="/common.js"></script>
+<script src="/brand.js"></script>
+<script src="/covers.js"></script>
+<script src="/player.js"></script>
+<script>
+
+let page = 1, pages = 1, items = [], cart = [];
+const CART = `cart:${TENANT}`;  // un pedido por disquería
+try { cart = JSON.parse(localStorage.getItem(CART)) || []; } catch {}
+
+const fmt = d => [d.media, d.description].filter(Boolean).join(" ");
+const inCart = d => cart.some(c => c.id === d.id);
+
+function renderCart() {
+  try { localStorage.setItem(CART, JSON.stringify(cart)); } catch {}
+  $("count").textContent = $("count-bar").textContent = cart.length;
+  $("cart-empty").hidden = cart.length > 0;
+  $("wa").disabled = $("copy").disabled = !cart.length;
+  $("empty").hidden = !cart.length;
+  $("cart-items").innerHTML = cart.map((d, i) => `
+    <li><span><span class="sticker">#${d.id}</span> <b>${esc(d.artist)}</b><small>${esc(d.title)}, ${esc(fmt(d))}${d.price ? ` · ${esc(fmtPrice(d.price))}` : ""}</small></span>
+    <button class="btn-text danger" data-rm="${i}" aria-label="Quitar ${esc(d.title)}">Quitar</button></li>`).join("");
+}
+
+function renderList() {
+  if (!items.length) {
+    const filtered = $("q").value || $("media").value || $("genre").value;
+    $("list").innerHTML = `<div class="empty">${filtered
+      ? `<h3>No encontramos discos con esa búsqueda</h3><p class="hint">Probá con menos palabras o quitá los filtros.</p>`
+      : `<h3>Todavía no hay catálogo cargado</h3><p class="hint">La disquería lo sube cuando llega la lista del mes.</p>`}</div>`;
+    return;
+  }
+  $("list").innerHTML = items.map((d, i) => {
+    const on = inCart(d);
+    return `<article class="row ${on ? "in" : ""}">
+      <div class="sleeve" data-sleeve="${d.id}"><img alt=""><span class="sticker">#${d.id}</span></div>
+      <div><div class="artist">${esc(d.artist)}</div><div class="title">${esc(d.title)}</div>
+        <div class="actions-line">
+          <button class="play" data-listen="${d.id}" data-artist="${esc(d.artist)}" data-title="${esc(d.title)}" ${albums.has(d.id) ? "" : "hidden"}>▶ Escuchar</button>
+          <a class="listen" href="https://www.youtube.com/results?search_query=${encodeURIComponent(cleanArtist(d.artist) + " " + cleanTitle(d.title))}" target="_blank" rel="noopener">YouTube</a>
+        </div></div>
+      <div class="meta">${d.price ? `<span class="price">${esc(fmtPrice(d.price))}</span>` : ""}<b>${esc(fmt(d))}</b><br>${esc(d.label)}${d.genre ? ` — ${esc(d.genre)}` : ""}${d.origin ? `<br>${esc(d.origin)}` : ""}${Object.entries(d.extra || {}).map(([k, v]) => `<br>${esc(k)}: ${esc(v)}`).join("")}</div>
+      <button class="btn btn-sm" data-add="${i}" aria-pressed="${on}">${on ? "Agregado ✓" : "Agregar"}</button>
+    </article>`;
+  }).join("");
+  loadCovers([...(homeHidden ? [] : shelves.flatMap(sh => sh.items)), ...items]);
+}
+
+// --- portada ---
+let homeBlocks = [{ type: "catalog" }], shelves = [], heroes = [], homeHidden = false;
+async function loadHome() {
+  try { homeBlocks = (await api("/api/portada")).blocks; } catch { homeBlocks = [{ type: "catalog" }]; }
+  shelves = homeBlocks.filter(b => b.type === "section");
+  heroes.forEach(h => clearInterval(h.timer));
+  heroes = homeBlocks.filter(b => b.type === "banners").map(b => ({ banners: b.banners, at: 0, timer: null }));
+  // un lugar por bloque, en el orden de la disquería; el catálogo es el mismo nodo de siempre, se mueve
+  let hi = 0;
+  $("home").innerHTML = homeBlocks.map(b => b.type === "section"
+    ? `<div class="home-block" data-block="section" data-shelf-slot="${shelves.indexOf(b)}"></div>`
+    : b.type === "banners" ? `<div class="home-block" data-block="banners" data-hero-slot="${hi++}"></div>`
+    : `<div class="home-block" data-block="${b.type}"></div>`).join("");
+  $("home").querySelector('[data-block="catalog"]').append($("catalog"));
+  renderBanners();
+  renderSections();
+}
+
+// --- banners: cada bloque es un slider independiente ---
+function renderBanners() {
+  heroes.forEach((h, hi) => {
+    const slot = $("home").querySelector(`[data-hero-slot="${hi}"]`), many = h.banners.length > 1;
+    slot.innerHTML = `<div class="hero" data-hero-i="${hi}" aria-roledescription="carrusel" aria-label="Destacados">
+      <div class="hero-track">${h.banners.map((b, i) => `
+        <div class="hero-slide" aria-roledescription="diapositiva" aria-label="${i + 1} de ${h.banners.length}" ${i ? 'aria-hidden="true"' : ""}>
+          <img src="${esc(b.url)}" alt="${esc(b.title)}" ${i || hi ? 'loading="lazy"' : ""}>
+          ${b.title || b.text || b.button_link ? `<div class="hero-copy">
+            ${b.title ? `<h2>${esc(b.title)}</h2>` : ""}${b.text ? `<p>${esc(b.text)}</p>` : ""}
+            ${b.button_link ? (b.button_link.startsWith("https://")
+              ? `<a class="btn hero-btn" href="${esc(b.button_link)}" target="_blank" rel="noopener">${esc(b.button_label)}</a>`
+              : `<button class="btn hero-btn" data-go="${esc(b.button_link)}">${esc(b.button_label)}</button>`) : ""}
+          </div>` : ""}
+        </div>`).join("")}</div>
+      ${many ? `<button class="hero-nav prev" data-hero="-1" aria-label="Anterior">‹</button><button class="hero-nav next" data-hero="1" aria-label="Siguiente">›</button>
+        <div class="hero-dots">${h.banners.map((_, i) => `<button data-hero-to="${i}" aria-label="Ir al ${i + 1}"></button>`).join("")}</div>` : ""}
+    </div>`;
+    const hero = slot.querySelector(".hero");
+    hero.onmouseenter = hero.onfocusin = () => clearInterval(h.timer);
+    hero.onmouseleave = hero.onfocusout = () => startHero(hi);
+    showHero(hi, 0);
+    startHero(hi);
+  });
+}
+function showHero(hi, i) {
+  const h = heroes[hi], el = $("home").querySelector(`[data-hero-i="${hi}"]`);
+  if (!h || !el) return;
+  h.at = (i + h.banners.length) % h.banners.length;
+  el.querySelector(".hero-track").style.transform = `translateX(-${h.at * 100}%)`;
+  el.querySelectorAll(".hero-slide").forEach((s, j) => s.setAttribute("aria-hidden", j !== h.at));
+  el.querySelectorAll("[data-hero-to]").forEach((d, j) => d.setAttribute("aria-current", j === h.at));
+}
+function startHero(hi) {
+  const h = heroes[hi];
+  clearInterval(h.timer);
+  if (h.banners.length > 1 && !matchMedia("(prefers-reduced-motion: reduce)").matches)
+    h.timer = setInterval(() => showHero(hi, h.at + 1), 6000);
+}
+
+function card(d, si, i) {
+  const on = inCart(d);
+  return `<article class="card ${on ? "in" : ""}">
+    <div class="sleeve" data-sleeve="${d.id}"><img alt=""><span class="sticker">#${d.id}</span>
+      <button class="card-play" data-listen="${d.id}" data-artist="${esc(d.artist)}" data-title="${esc(d.title)}" aria-label="Escuchar ${esc(d.title)}" ${albums.has(d.id) ? "" : "hidden"}>▶</button></div>
+    <div class="c-artist">${esc(d.artist)}</div>
+    <div class="c-title">${esc(d.title)}</div>
+    ${d.price ? `<span class="price">${esc(fmtPrice(d.price))}</span>` : ""}
+    <div class="c-meta">${esc(fmt(d))}</div>
+    <button class="btn btn-sm" data-shelf-add="${si}:${i}" aria-pressed="${on}">${on ? "Agregado ✓" : "Agregar"}</button>
+  </article>`;
+}
+function renderSections() {
+  // re-pintar no tiene que mover el carrusel que el cliente estaba mirando
+  const scroll = shelves.map((_, si) => document.getElementById(`shelf-${si}`)?.scrollLeft || 0);
+  shelves.forEach((sh, si) => {
+    const slot = $("home").querySelector(`[data-shelf-slot="${si}"]`);
+    if (slot) slot.innerHTML = shelfHtml(sh, si);
+  });
+  document.querySelectorAll(".shelf-track").forEach(el => {
+    const si = +el.id.split("-")[1];
+    el.style.scrollBehavior = "auto"; el.scrollLeft = scroll[si] || 0; el.style.scrollBehavior = "";
+  });
+  syncShelfNav();
+  shelves.forEach(sh => sh.items.forEach(d => applyCover(d.id)));
+}
+function shelfHtml(sh, si) {
+  return `
+    <section class="shelf" aria-labelledby="shelf-h-${si}">
+      <div class="shelf-head">
+        <h2 id="shelf-h-${si}">${esc(sh.name)}</h2>
+        <button class="shelf-nav" data-scroll="-1" data-shelf="${si}" aria-label="Ver anteriores de ${esc(sh.name)}">‹</button>
+        <button class="shelf-nav" data-scroll="1" data-shelf="${si}" aria-label="Ver más de ${esc(sh.name)}">›</button>
+      </div>
+      <div class="shelf-track" id="shelf-${si}">${sh.items.map((d, i) => card(d, si, i)).join("")}</div>
+    </section>`;
+}
+// las flechas solo si hay más tarjetas de las que entran
+function syncShelfNav() {
+  document.querySelectorAll(".shelf").forEach(el => {
+    const track = el.querySelector(".shelf-track"), fits = track.scrollWidth <= track.clientWidth + 2;
+    el.querySelectorAll(".shelf-nav").forEach(b => { b.hidden = fits; });
+  });
+}
+addEventListener("resize", syncShelfNav);
+$("home").onclick = e => {
+  const hero = e.target.closest("[data-hero]"), dot = e.target.closest("[data-hero-to]"), go = e.target.closest("[data-go]");
+  const hi = +e.target.closest("[data-hero-i]")?.dataset.heroI;
+  if (hero) return (showHero(hi, heroes[hi].at + +hero.dataset.hero), startHero(hi));
+  if (dot) return (showHero(hi, +dot.dataset.heroTo), startHero(hi));
+  if (go) {
+    // botón del banner: a una sección de la portada o al catálogo
+    const link = go.dataset.go, i = shelves.findIndex(sh => `section:${sh.id}` === link);
+    const target = link === "catalog" ? $("catalog") : $("home").querySelector(`[data-shelf-slot="${i}"]`);
+    return target?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+  const nav = e.target.closest("[data-scroll]");
+  if (nav) {
+    const track = $(`shelf-${nav.dataset.shelf}`);
+    return track.scrollBy({ left: +nav.dataset.scroll * track.clientWidth * 0.8 });
+  }
+  const add = e.target.dataset.shelfAdd;
+  if (!add) return;
+  const [si, i] = add.split(":").map(Number), d = shelves[si].items[i], at = cart.findIndex(c => c.id === d.id);
+  at >= 0 ? cart.splice(at, 1) : cart.push(d);
+  renderCart(); renderList(); renderSections();
+};
+
+async function search() {
+  const params = new URLSearchParams({ q: $("q").value, media: $("media").value, genre: $("genre").value, page });
+  $("list").classList.add("loading");
+  $("status").textContent = "Buscando…";
+  try {
+    const data = await api("/api/discos?" + params);
+    items = data.items;
+    pages = Math.max(1, Math.ceil(data.total / data.page_size));
+    const from = data.total ? (page - 1) * data.page_size + 1 : 0;
+    $("status").textContent = `Mostrando ${num(from)}–${num(from + items.length - 1 || 0)} de ${num(data.total)} discos`;
+    $("pageinfo").textContent = `Página ${page} de ${num(pages)}`;
+    $("prev").disabled = page <= 1;
+    $("next").disabled = page >= pages;
+    const filtered = $("q").value || $("media").value || $("genre").value;
+    $("clear").hidden = !filtered;
+    // buscando o en otra página: solo el catálogo
+    homeHidden = !!filtered || page > 1;
+    document.querySelectorAll('.home-block:not([data-block="catalog"])').forEach(el => { el.hidden = homeHidden; });
+    renderList();
+    renderCart();
+  } catch (e) {
+    if (e.status === 401 || e.status === 403) return lockOut(e);
+    $("status").textContent = e.message;
+  } finally {
+    $("list").classList.remove("loading");
+  }
+}
+
+const message = () => buildMessage(BRAND, cart, BRAND.name);
+
+let estado = {};  // { closes_at, closed }
+
+function showGate() { $("store").hidden = true; $("gate").hidden = false; $("code").focus(); }
+
+function showClosed() {
+  $("store").hidden = true;
+  $("gate").hidden = false;
+  $("login").hidden = $("deadline").hidden = true;
+  $("gate-title").textContent = "La lista de este mes ya cerró";
+  $("gate-lead").textContent = estado.closes_at
+    ? `Cerró el ${fmtDate(estado.closes_at)}. Cuando llegue la lista nueva vas a poder entrar de nuevo.`
+    : "Cuando llegue la lista nueva vas a poder entrar de nuevo.";
+}
+
+function renderDeadline() {
+  const open = estado.closes_at && !estado.closed;
+  $("deadline").hidden = $("cart-deadline").hidden = !open;
+  if (open) {
+    $("deadline").textContent = `Pedidos abiertos hasta el ${fmtDate(estado.closes_at)}.`;
+    $("cart-deadline").textContent = `Podés consultar hasta el ${fmtDate(estado.closes_at)}.`;
+  }
+}
+
+async function loadEstado() {
+  try { estado = await api("/api/estado"); } catch { estado = {}; }
+  $("logout").hidden = estado.code_required === false;  // tienda pública: no hay de dónde salir
+  renderDeadline();
+}
+
+// 401 = falta el código, 403 = la lista cerró
+async function lockOut(err) {
+  if (err.status === 403) { await loadEstado(); return showClosed(); }
+  estado.closed ? showClosed() : showGate();
+}
+
+async function openStore() {
+  const f = await api("/api/filtros");
+  for (const k of ["media", "genre"])
+    $(k).innerHTML = $(k).options[0].outerHTML + f[k].map(v => `<option>${esc(v)}</option>`).join("");
+  $("gate").hidden = true;
+  $("store").hidden = false;
+  renderCart();
+  await loadHome();
+  search();
+}
+
+$("login").onsubmit = async e => {
+  e.preventDefault();
+  const btn = e.submitter, code = $("code");
+  if (!code.value.trim()) { $("login-error").textContent = "Escribí el código que te pasó la disquería."; code.setAttribute("aria-invalid", "true"); return; }
+  setBusy(btn, true, "Entrando…");
+  try {
+    await api("/api/login", { method: "POST", body: { value: code.value } });
+    code.value = "";
+    await openStore();
+  } catch (err) {
+    if (err.status === 403) return lockOut(err);
+    $("login-error").textContent = err.message;
+    code.setAttribute("aria-invalid", "true");
+    code.select();
+  } finally { setBusy(btn, false); }
+};
+$("code").oninput = () => { $("login-error").textContent = ""; $("code").removeAttribute("aria-invalid"); };
+
+$("logout").onclick = async () => { await api("/api/logout", { method: "POST" }); showGate(); };
+
+let t;
+$("q").oninput = () => { clearTimeout(t); t = setTimeout(() => { page = 1; search(); }, 300); };
+$("media").onchange = $("genre").onchange = () => { page = 1; search(); };
+$("clear").onclick = () => { $("q").value = $("media").value = $("genre").value = ""; page = 1; search(); };
+$("prev").onclick = () => { page--; search(); scrollTo({ top: 0 }); };
+$("next").onclick = () => { page++; search(); scrollTo({ top: 0 }); };
+
+$("list").onclick = e => {
+  const i = e.target.dataset.add;
+  if (i === undefined) return;
+  const d = items[i], at = cart.findIndex(c => c.id === d.id);
+  at >= 0 ? cart.splice(at, 1) : cart.push(d);
+  renderCart(); renderList(); renderSections();
+};
+$("cart-items").onclick = e => {
+  const i = e.target.dataset.rm;
+  if (i === undefined) return;
+  const [removed] = cart.splice(i, 1);
+  renderCart(); renderList(); renderSections();
+  // deshacer en lugar de confirmar: quitar es barato de revertir
+  Swal.fire({ toast: true, position: "bottom", timer: 4000, showConfirmButton: true, confirmButtonText: "Deshacer", text: `Quitaste ${removed.title}` })
+    .then(r => { if (r.isConfirmed) { cart.splice(i, 0, removed); renderCart(); renderList(); renderSections(); } });
+};
+$("empty").onclick = async () => {
+  if (await confirmAction({ title: "¿Vaciar el pedido?", text: `Se quitan los ${cart.length} discos que agregaste.`, confirm: "Vaciar pedido" })) {
+    cart = []; renderCart(); renderList(); renderSections();
+  }
+};
+$("wa").onclick = () => BRAND.whatsapp
+  ? window.open(`https://wa.me/${BRAND.whatsapp}?text=${encodeURIComponent(message())}`, "_blank")
+  : Swal.fire({ icon: "info", title: "Falta el WhatsApp de la disquería", text: "Usá Copiar lista y mandásela a la disquería." });
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText(message()); toast.fire({ icon: "success", title: "Lista copiada" }); }
+  catch { toast.fire({ icon: "error", title: "No se pudo copiar. Usá el botón de WhatsApp." }); }
+};
+$("cart-bar").onclick = () => $("cart").classList.add("open");
+$("close-cart").onclick = () => $("cart").classList.remove("open");
+
+brandReady.then(ok => ok && loadEstado().then(openStore).catch(e => e.status === 401 || e.status === 403 ? lockOut(e)
+  : Swal.fire({ icon: "error", title: "No se pudo cargar la tienda", text: e.message })));
+</script>
+</body>
+</html>
