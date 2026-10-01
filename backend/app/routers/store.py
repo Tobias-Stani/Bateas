@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import FileResponse
 
-from ..config import CLOSED, IMAGE_TYPES
+from ..config import CLOSED, IMAGE_TYPES, PAGE_SIZE
 from ..dependencies import require_client, tenant
 from ..schemas import Secret
 from ..security import clear_tenant_cookie, client_token, same, set_tenant_cookie
@@ -45,8 +45,8 @@ def filtros(t: dict = Depends(require_client)):
 
 
 @router.get("/discos")
-def discos(q: str = "", media: str = "", genre: str = "", page: int = 1, t: dict = Depends(require_client)):
-    return catalog.search(t, q, media, genre, page)
+def discos(q: str = "", media: str = "", genre: str = "", page: int = 1, per_page: int = PAGE_SIZE, t: dict = Depends(require_client)):
+    return catalog.search(t, q, media, genre, page, per_page)
 
 
 @router.get("/secciones")

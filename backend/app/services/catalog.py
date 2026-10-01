@@ -188,9 +188,10 @@ def disc(row):
     return d
 
 
-def search(t, q="", media="", genre="", page=1):
+def search(t, q="", media="", genre="", page=1, per_page=PAGE_SIZE):
+    per_page = min(max(per_page, 1), PAGE_SIZE)  # la tienda elige de 10 a 50; nunca más que el máximo
     if not exists(t):
-        return {"total": 0, "items": [], "page_size": PAGE_SIZE}
+        return {"total": 0, "items": [], "page_size": per_page}
     where, params = [], []
     # cada palabra tiene que aparecer en artista, título o sello
     # ponytail: LIKE full scan, ~60k filas va sobrado; FTS5 si el catálogo crece mucho
@@ -212,9 +213,9 @@ def search(t, q="", media="", genre="", page=1):
     con = db(t)
     count = con.execute(f"SELECT COUNT(*) FROM discos {sql_where}", params).fetchone()[0]
     items = [disc(r) for r in con.execute(f"SELECT * FROM discos {sql_where} ORDER BY id LIMIT ? OFFSET ?",
-                                          [*params, PAGE_SIZE, (max(page, 1) - 1) * PAGE_SIZE])]
+                                          [*params, per_page, (max(page, 1) - 1) * per_page])]
     con.close()
-    return {"total": count, "items": items, "page_size": PAGE_SIZE}
+    return {"total": count, "items": items, "page_size": per_page}
 
 
 def filters(t):

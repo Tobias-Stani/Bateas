@@ -164,6 +164,9 @@ def test_search_filters_and_id(shop):
     assert [i["id"] for i in d("#3")["items"]] == [3] and [i["id"] for i in d("3")["items"]][0] == 3
     assert d(media="CD")["total"] == 3 and d(genre="Jazz")["total"] == 1
     assert d()["page_size"] == 50
+    two = d(per_page=2, page=2)
+    assert two["page_size"] == 2 and [i["id"] for i in two["items"]] == [4, 5] and two["total"] == 5
+    assert d(per_page=500)["page_size"] == 50 and d(per_page=0)["page_size"] == 1
     f = admin.get(f"/api/t/{slug}/filtros").json()
     assert f["media"] == ["CD", "Vinyl"] and "Jazz" in f["genre"]
     item = d("radiohead")["items"][0]

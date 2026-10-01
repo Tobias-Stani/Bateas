@@ -187,6 +187,22 @@ Los tests prueban la API desde afuera, con una base temporal: no tocan tus datos
 
 ---
 
+## Tienda de demo
+
+La landing enlaza a `/demo`: una disquería pública con 44 discos, dos secciones y banners. Como los datos viven en el volumen, se crea con un script que usa la API (si `/demo` ya existe, no toca nada):
+
+```
+# local
+docker compose run --rm --no-deps -v ./demo:/demo backend python /demo/seed_demo.py
+
+# producción (con la SUPER_PASSWORD de Railway)
+docker compose run --rm --no-deps -v ./demo:/demo -e SUPER_PASSWORD=... backend python /demo/seed_demo.py https://bateas-production.up.railway.app
+```
+
+Para rehacerla: cancelarla y eliminarla desde `/super`, y volver a correr el script.
+
+---
+
 ## Deploy en Railway
 
 | Recurso | Valor |

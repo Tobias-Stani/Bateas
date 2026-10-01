@@ -121,6 +121,23 @@
   .strip .wrap { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; font-weight: 800; font-stretch: 80%; font-size: 1.05rem; letter-spacing: 0.02em; }
   .strip span::before { content: "●"; color: var(--accent); margin-right: 10px; font-size: 0.7em; vertical-align: middle; }
 
+  /* tienda de demo: toda la tarjeta es el link */
+  .demo-band { padding: 64px 0 0; }
+  .demo-box {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 32px; align-items: center; text-decoration: none;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 36px 40px; transition: border-color 0.15s;
+  }
+  .demo-box:hover { border-color: var(--accent); }
+  .demo-box:hover .btn-primary { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .demo-box h2 { font-size: clamp(2rem, 4vw, 3rem); margin: 8px 0 10px; }
+  .demo-box p { color: var(--text-soft); max-width: 36em; }
+  .demo-disc {
+    width: 104px; height: 104px; border-radius: 50%;
+    background: radial-gradient(circle, var(--surface) 0 4%, var(--accent) 5% 34%, #050507 35% 37%, transparent 38%), var(--grooves);
+  }
+  @media (prefers-reduced-motion: no-preference) { .demo-box:hover .demo-disc { animation: spin 1.8s linear infinite; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   section.block { padding: 96px 0; }
   section[id] { scroll-margin-top: 72px; }  /* el menú es fijo: el título no queda debajo */
   .block-head { max-width: 640px; margin-bottom: 48px; }
@@ -221,6 +238,9 @@
     .cart { display: none; }
     .bubble { left: 8px; bottom: -40px; max-width: 220px; }
     .final .box { padding: 44px 22px; }
+    .demo-box { grid-template-columns: 1fr; gap: 20px; padding: 28px 22px; }
+    .demo-disc { width: 72px; height: 72px; }
+    .demo-box .btn { justify-content: center; }
     .strip .wrap { gap: 10px 22px; font-size: 0.95rem; }
   }
 </style>
@@ -231,6 +251,7 @@
   <div class="wrap">
     <a class="brand" href="#"><img src="/bateas.svg" alt=""><span>bateas</span></a>
     <nav aria-label="Secciones">
+      <a href="/demo">Ver demo</a>
       <a href="#como-funciona">Cómo funciona</a>
       <a href="#que-trae">Qué trae</a>
       <a href="#quienes-somos">Quiénes somos</a>
@@ -249,7 +270,7 @@
         <p class="lead">Subís el Excel que te manda el distribuidor y listo: tus clientes recorren tu batea online, arman el pedido y te llega ordenado por WhatsApp.</p>
         <div class="ctas">
           <a class="btn btn-primary" href="#contacto">Quiero mi tienda →</a>
-          <a class="btn btn-ghost" href="#como-funciona">Ver cómo funciona</a>
+          <a class="btn btn-ghost" href="/demo">Ver tienda de demo</a>
         </div>
         <p class="note">Con tu nombre, tu logo y tus colores. Sin programar nada.</p>
       </div>
@@ -280,6 +301,20 @@
   <div class="strip" aria-hidden="true">
     <div class="wrap"><span>Tu marca</span><span>Cualquier Excel</span><span>Tu inventario de Discogs</span><span>Pedidos por WhatsApp</span><span>Preventas con código</span><span>Escuchá antes de pedir</span></div>
   </div>
+
+  <section class="demo-band">
+    <div class="wrap">
+      <a class="demo-box" href="/demo">
+        <span class="demo-disc" aria-hidden="true"></span>
+        <div>
+          <span class="eyebrow">Probala ahora</span>
+          <h2>Mirá una tienda funcionando.</h2>
+          <p>Una disquería de ejemplo con banners, secciones y 44 discos. Buscá, escuchá y armá un pedido como lo haría tu cliente.</p>
+        </div>
+        <span class="btn btn-primary">Abrir la tienda de demo →</span>
+      </a>
+    </div>
+  </section>
 
   <section id="como-funciona" class="block">
     <div class="wrap">
@@ -391,7 +426,7 @@
     <div class="wrap">
       <div class="box">
         <h2>Tu batea te está esperando.</h2>
-        <p>Escribinos y te armamos una tienda de prueba con tu propio Excel.</p>
+        <p>Escribinos y te armamos una tienda de prueba con tu propio Excel. O mirá antes <a href="/demo">la tienda de demo</a>.</p>
         <div class="ctas">
           <!-- TODO: poner el número de WhatsApp y el mail de contacto reales -->
           <a class="btn btn-primary" href="https://wa.me/5490000000000?text=Hola!%20Quiero%20mi%20tienda%20en%20Bateas" target="_blank" rel="noopener">Escribinos por WhatsApp</a>

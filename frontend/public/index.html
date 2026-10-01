@@ -17,28 +17,17 @@
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
   .layout > section { min-width: 0; }  /* si no, el carrusel ensancha la columna (y la página) en el celular */
 
-  .list { background: var(--white); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  .row {
-    --cover: 96px;
-    display: grid; grid-template-columns: var(--cover) minmax(0, 2.2fr) minmax(0, 1.4fr) 132px; gap: 18px; align-items: center;
-    padding: 14px 18px; border-bottom: 1px solid var(--line);
-  }
-  /* tapa con la etiqueta de precio pegada en la esquina; sin tapa queda solo la etiqueta */
+  /* catálogo: las mismas tarjetas de las secciones, en grilla; la tapa ocupa el ancho de la columna */
+  .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 16px; }
+  .list .card .sleeve { width: 100%; height: auto; aspect-ratio: 1; }
+  .list .card .sleeve img { width: 100%; height: 100%; }
+  .list .empty { grid-column: 1 / -1; background: var(--white); border: 1px solid var(--line); border-radius: 14px; }
+  /* tapa con el número pegado en la esquina; sin tapa queda el vinilo con el número */
   .sleeve { position: relative; width: var(--cover); }
   .sleeve img { display: none; width: var(--cover); height: var(--cover); object-fit: cover; border-radius: 3px; box-shadow: 0 2px 6px rgba(19, 20, 24, 0.25); }
   .sleeve.has-cover img { display: block; animation: show 0.25s ease-out; }
-  .sleeve.has-cover .sticker { position: absolute; left: -6px; bottom: -6px; }
   @keyframes show { from { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .sleeve.has-cover img { animation: none; } }
-  .row:last-child { border-bottom: 0; }
-  .row.in { background: #fff6e0; }
-  .row .artist { font-weight: 700; }
-  .row .title { color: var(--ink-soft); }
-  .row .listen { display: inline-block; margin-top: 4px; font-size: 0.88rem; font-weight: 600; color: var(--accent-dark); }
-  .row .meta { font-size: 0.9rem; color: var(--muted); }
-  .row .meta b { color: var(--ink); font-weight: 600; }
-  .row .btn { width: 100%; }
-  .row.in .btn { background: var(--white); color: var(--green); border-color: var(--green); }
 
   .home-block, #catalog { scroll-margin-top: 96px; }  /* la barra superior es fija */
   /* banners: slider arriba de la portada */
@@ -99,11 +88,8 @@
   .card .c-meta { color: var(--muted); font-size: 0.82rem; margin-bottom: 8px; }
   .card.in .btn { background: var(--white); color: var(--green); border-color: var(--green); }
 
+  .card .c-yt { font-size: 0.82rem; font-weight: 600; color: var(--accent-dark); margin-bottom: 8px; }
   /* escuchar: aparece solo si Deezer encontró el álbum */
-  .row .actions-line { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
-  .row .play { border: 0; background: var(--accent); color: var(--white); font: inherit; font-weight: 700; font-size: 0.85rem; border-radius: 999px; padding: 4px 12px 4px 10px; cursor: pointer; }
-  .row .play:hover { background: var(--accent-dark); }
-  .row .listen { margin-top: 0; }
   .card-play {
     position: absolute; right: 8px; bottom: 8px; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
     background: var(--accent); color: var(--white); font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); padding-left: 3px;
@@ -156,7 +142,7 @@
 
   @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; }
-    .row { --cover: 84px; grid-template-columns: var(--cover) 1fr; }
+    .list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
     .shelf-track { grid-auto-columns: 148px; gap: 12px; }
     .card { --cover: 126px; }
     .shelf-nav { display: none; }  /* en el celular se desliza con el dedo */
@@ -166,9 +152,6 @@
     .hero-copy p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hero-btn { padding: 8px 14px; font-size: 0.9rem; }
     .hero-nav { display: none; }
-    .row .sleeve { grid-row: span 2; align-self: start; }
-    .row .meta { grid-column: 2; }
-    .row .btn { grid-column: 1 / -1; }
     .filters .hint { margin-left: 0; width: 100%; }
     .cart { position: fixed; inset: auto 0 0 0; top: auto; border-radius: 14px 14px 0 0; max-height: 80vh; overflow: auto; z-index: 20; box-shadow: 0 -8px 30px rgba(22, 35, 63, 0.25); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
     .cart:not(.open) { display: none; }
@@ -221,6 +204,11 @@
         <div class="filters">
           <select id="media" class="field" aria-label="Formato"><option value="">Todos los formatos</option></select>
           <select id="genre" class="field" aria-label="Género"><option value="">Todos los géneros</option></select>
+          <select id="per-page" class="field" aria-label="Discos por página">
+            <option value="10">10 por página</option><option value="15">15 por página</option><option value="20">20 por página</option>
+            <option value="25" selected>25 por página</option><option value="30">30 por página</option><option value="35">35 por página</option>
+            <option value="40">40 por página</option><option value="45">45 por página</option><option value="50">50 por página</option>
+          </select>
           <button id="clear" class="btn-text" hidden>Quitar filtros</button>
           <p id="status" class="hint" aria-live="polite"></p>
         </div>
@@ -294,19 +282,7 @@ function renderList() {
       : `<h3>Todavía no hay catálogo cargado</h3><p class="hint">La disquería lo sube cuando llega la lista del mes.</p>`}</div>`;
     return;
   }
-  $("list").innerHTML = items.map((d, i) => {
-    const on = inCart(d);
-    return `<article class="row ${on ? "in" : ""}">
-      <div class="sleeve" data-sleeve="${d.id}"><img alt=""><span class="sticker">#${d.id}</span></div>
-      <div><div class="artist">${esc(d.artist)}</div><div class="title">${esc(d.title)}</div>
-        <div class="actions-line">
-          <button class="play" data-listen="${d.id}" data-artist="${esc(d.artist)}" data-title="${esc(d.title)}" ${albums.has(d.id) ? "" : "hidden"}>▶ Escuchar</button>
-          <a class="listen" href="https://www.youtube.com/results?search_query=${encodeURIComponent(cleanArtist(d.artist) + " " + cleanTitle(d.title))}" target="_blank" rel="noopener">YouTube</a>
-        </div></div>
-      <div class="meta">${d.price ? `<span class="price">${esc(fmtPrice(d.price))}</span>` : ""}<b>${esc(fmt(d))}</b><br>${esc(d.label)}${d.genre ? ` — ${esc(d.genre)}` : ""}${d.origin ? `<br>${esc(d.origin)}` : ""}${Object.entries(d.extra || {}).map(([k, v]) => `<br>${esc(k)}: ${esc(v)}`).join("")}</div>
-      <button class="btn btn-sm" data-add="${i}" aria-pressed="${on}">${on ? "Agregado ✓" : "Agregar"}</button>
-    </article>`;
-  }).join("");
+  $("list").innerHTML = items.map((d, i) => card(d, `data-add="${i}"`)).join("");
   loadCovers([...(homeHidden ? [] : shelves.flatMap(sh => sh.items)), ...items]);
 }
 
@@ -368,16 +344,19 @@ function startHero(hi) {
     h.timer = setInterval(() => showHero(hi, h.at + 1), 6000);
 }
 
-function card(d, si, i) {
+// tarjeta de un disco: la usan las secciones y el catálogo; addAttr dice a qué lista pertenece el botón
+function card(d, addAttr) {
   const on = inCart(d);
+  const meta = [fmt(d), [d.label, d.genre].filter(Boolean).join(" — "), d.origin, ...Object.entries(d.extra || {}).map(([k, v]) => `${k}: ${v}`)].filter(Boolean);
   return `<article class="card ${on ? "in" : ""}">
     <div class="sleeve" data-sleeve="${d.id}"><img alt=""><span class="sticker">#${d.id}</span>
       <button class="card-play" data-listen="${d.id}" data-artist="${esc(d.artist)}" data-title="${esc(d.title)}" aria-label="Escuchar ${esc(d.title)}" ${albums.has(d.id) ? "" : "hidden"}>▶</button></div>
     <div class="c-artist">${esc(d.artist)}</div>
     <div class="c-title">${esc(d.title)}</div>
     ${d.price ? `<span class="price">${esc(fmtPrice(d.price))}</span>` : ""}
-    <div class="c-meta">${esc(fmt(d))}</div>
-    <button class="btn btn-sm" data-shelf-add="${si}:${i}" aria-pressed="${on}">${on ? "Agregado ✓" : "Agregar"}</button>
+    <div class="c-meta">${meta.map(esc).join("<br>")}</div>
+    <a class="c-yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(cleanArtist(d.artist) + " " + cleanTitle(d.title))}" target="_blank" rel="noopener">Buscar en YouTube</a>
+    <button class="btn btn-sm" ${addAttr} aria-pressed="${on}">${on ? "Agregado ✓" : "Agregar"}</button>
   </article>`;
 }
 function renderSections() {
@@ -402,7 +381,7 @@ function shelfHtml(sh, si) {
         <button class="shelf-nav" data-scroll="-1" data-shelf="${si}" aria-label="Ver anteriores de ${esc(sh.name)}">‹</button>
         <button class="shelf-nav" data-scroll="1" data-shelf="${si}" aria-label="Ver más de ${esc(sh.name)}">›</button>
       </div>
-      <div class="shelf-track" id="shelf-${si}">${sh.items.map((d, i) => card(d, si, i)).join("")}</div>
+      <div class="shelf-track" id="shelf-${si}">${sh.items.map((d, i) => card(d, `data-shelf-add="${si}:${i}"`)).join("")}</div>
     </section>`;
 }
 // las flechas solo si hay más tarjetas de las que entran
@@ -437,7 +416,7 @@ $("home").onclick = e => {
 };
 
 async function search() {
-  const params = new URLSearchParams({ q: $("q").value, media: $("media").value, genre: $("genre").value, page });
+  const params = new URLSearchParams({ q: $("q").value, media: $("media").value, genre: $("genre").value, page, per_page: $("per-page").value });
   $("list").classList.add("loading");
   $("status").textContent = "Buscando…";
   try {
@@ -534,7 +513,7 @@ $("logout").onclick = async () => { await api("/api/logout", { method: "POST" })
 
 let t;
 $("q").oninput = () => { clearTimeout(t); t = setTimeout(() => { page = 1; search(); }, 300); };
-$("media").onchange = $("genre").onchange = () => { page = 1; search(); };
+$("media").onchange = $("genre").onchange = $("per-page").onchange = () => { page = 1; search(); };
 $("clear").onclick = () => { $("q").value = $("media").value = $("genre").value = ""; page = 1; search(); };
 $("prev").onclick = () => { page--; search(); scrollTo({ top: 0 }); };
 $("next").onclick = () => { page++; search(); scrollTo({ top: 0 }); };
