@@ -11,6 +11,9 @@ REGISTRY = DATA / "registry.db"
 SUPER_PASSWORD = os.environ.get("SUPER_PASSWORD", "")  # vacío = panel de super admin deshabilitado
 SECRET_KEY = os.environ.get("SECRET_KEY", "")  # vacío = se genera una y queda en el volumen
 STATIC_DIR = os.environ.get("STATIC_DIR", "")  # producción: el backend también sirve el front
+# app registrada en discogs.com/settings/developers; vacías = sin conexión con Discogs
+DISCOGS_KEY = os.environ.get("DISCOGS_KEY", "")
+DISCOGS_SECRET = os.environ.get("DISCOGS_SECRET", "")
 
 TENANTS.mkdir(parents=True, exist_ok=True)
 
@@ -49,6 +52,12 @@ FIELDS = {
 CUSTOM, EXTRA, IGNORE = "custom", "extra", "ignore"
 KINDS = {CUSTOM, EXTRA, IGNORE}
 HEADER_SCAN = 15  # el encabezado puede venir debajo de un logo o un título
+
+# --- Discogs ---
+DISCOGS_API = "https://api.discogs.com"
+DISCOGS_AUTHORIZE = "https://www.discogs.com/oauth/authorize"
+DISCOGS_AGENT = "Bateas/1.0 +https://bateas-production.up.railway.app"  # Discogs exige un User-Agent propio
+DISCOGS_PAGE = 100  # el máximo que deja la API
 
 # --- portada ---
 MAX_SECTIONS, MAX_SECTION_ITEMS = 20, 60

@@ -141,6 +141,21 @@ def test_brand_has_store_settings(shop, client):
     assert b["accent"].startswith("#") and b["highlight"].startswith("#")
 
 
+def test_contact_info(shop, client):
+    slug, admin = shop
+    put = lambda **c: admin.put(f"/api/t/{slug}/admin/contact", json=c)
+    assert put(email="no-es-mail").status_code == 400
+    assert put(phone="12").status_code == 400
+    assert put(instagram="con espacio").status_code == 400
+    r = put(address=" Corrientes 1234 ", city="CABA", phone="11 4567-8901", email="hola@surco.com",
+            instagram="https://instagram.com/el.surco/")
+    assert r.json()["contact"] == {"address": "Corrientes 1234", "city": "CABA", "phone": "11 4567-8901",
+                                   "email": "hola@surco.com", "instagram": "el.surco"}
+    assert client.get(f"/api/t/{slug}/brand").json()["contact"]["instagram"] == "el.surco"
+    assert admin.get(f"/api/t/{slug}/admin/status").json()["contact"]["city"] == "CABA"
+    assert put().json()["contact"] == {}  # todo vacío: se borra
+
+
 def test_search_filters_and_id(shop):
     slug, admin = shop
     upload(admin, slug, xlsx(*CATALOG), CATALOG_MAP)

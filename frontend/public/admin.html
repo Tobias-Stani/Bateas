@@ -64,6 +64,10 @@
   .code-now { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
   .code-now .sticker { font-size: 1.3rem; padding: 4px 14px; }
   .code-form { display: flex; gap: 10px; flex-wrap: wrap; }
+  .contact-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .contact-form .wide { grid-column: 1 / -1; }
+  .contact-form .error { margin: 0; }
+  @media (max-width: 520px) { .contact-form { grid-template-columns: 1fr; } }
   .code-form .field { flex: 1; min-width: 180px; }
 
   .msg { display: grid; gap: 20px; margin-top: 20px; }  /* media columna: vista previa debajo del editor */
@@ -205,6 +209,18 @@
         </form>
       </section>
 
+      <section id="discogs-panel" class="panel" aria-labelledby="h-discogs" hidden>
+        <h2 id="h-discogs">Discogs</h2>
+        <p class="hint">Conectá tu cuenta de Discogs e importá los discos que tenés a la venta. Reemplaza el catálogo actual, igual que un Excel.</p>
+        <p id="discogs-state" class="state" aria-live="polite"></p>
+        <div class="upload-actions">
+          <button id="discogs-connect" class="btn">Conectar con Discogs</button>
+          <button id="discogs-import" class="btn">Importar inventario</button>
+          <button id="discogs-disconnect" type="button" class="btn-text" style="margin-left:auto">Desconectar</button>
+        </div>
+        <p class="hint" style="margin-top:12px">Datos provistos por <a href="https://www.discogs.com" target="_blank" rel="noopener">Discogs</a>.</p>
+      </section>
+
       <section class="panel" aria-labelledby="h-close">
         <h2 id="h-close">Cierre de la lista</h2>
         <p class="hint">Después de esta fecha los clientes no pueden entrar a la tienda. Vos sí.</p>
@@ -257,6 +273,21 @@
           <button class="btn">Guardar número</button>
           <p id="wa-hint" class="hint" style="width:100%">Con código de país y de área, sin el 0 ni el 15. Para Argentina: 54 9 + área + número.</p>
           <p id="wa-error" class="error" role="alert" style="width:100%;margin:0"></p>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="h-contact">
+        <h2 id="h-contact">Datos de contacto</h2>
+        <p class="hint">Se muestran al pie de la tienda. Todo es opcional: lo que dejes vacío no aparece.</p>
+        <form id="contact-form" class="contact-form" novalidate>
+          <div class="wide"><label for="c-address">Dirección</label><input id="c-address" name="address" class="field" maxlength="150" autocomplete="street-address" placeholder="Av. Corrientes 1234, local 5"></div>
+          <div><label for="c-city">Localidad</label><input id="c-city" name="city" class="field" maxlength="80" placeholder="CABA"></div>
+          <div><label for="c-phone">Teléfono</label><input id="c-phone" name="phone" class="field" type="tel" maxlength="40" placeholder="11 4567-8901"></div>
+          <div><label for="c-email">Mail</label><input id="c-email" name="email" class="field" type="email" maxlength="120" placeholder="hola@tudisqueria.com"></div>
+          <div><label for="c-instagram">Instagram</label><input id="c-instagram" name="instagram" class="field" maxlength="100" placeholder="@tudisqueria"></div>
+          <div class="wide"><label for="c-hours">Horarios</label><input id="c-hours" name="hours" class="field" maxlength="150" placeholder="Lunes a sábado de 11 a 20"></div>
+          <p id="contact-error" class="error wide" role="alert"></p>
+          <div class="wide"><button class="btn">Guardar contacto</button></div>
         </form>
       </section>
 
@@ -430,6 +461,8 @@ async function openPanel() {
   $("panel").hidden = false;
   renderStatus();
   if (!msgDirty) renderMessage();
+  renderContact();
+  renderDiscogs();
   loadTable();
   loadSections().then(loadHome);  // el formulario del banner lista las secciones
 }
@@ -565,9 +598,7 @@ $("upload").onsubmit = async e => {
   try {
     const mapping = Object.fromEntries(plan.columns.map(c => [c.index, c.field]));
     const r = await api("/api/admin/upload/confirm", { method: "POST", body: { header_row: plan.header_row, mapping } });
-    const gone = (r.sections_missing || []).map(x => `<li><b>${esc(x.name)}</b>: ${x.missing} ${x.missing === 1 ? "disco no está" : "discos no están"} en esta lista</li>`).join("");
-    await Swal.fire({ icon: "success", title: "Catálogo cargado", confirmButtonText: "Listo",
-      html: `<b>${num(r.total)} discos</b> ya están disponibles en la tienda.${gone ? `<ul style="text-align:left;margin-top:14px">${gone}</ul><p style="font-size:0.9rem">Se ocultan de la tienda hasta que vuelvan a aparecer. Podés quitarlos desde <b>Secciones</b>.</p>` : ""}` });
+    await catalogLoaded(r.total, r.sections_missing);
     resetFile();
     page = 1;
     await openPanel();
@@ -691,6 +722,104 @@ $("wa-form").onsubmit = async e => {
   } catch (err) {
     if (err.status === 401) return showGate();
     fail(err.message);
+  }
+};
+
+// aviso después de cargar un catálogo (Excel o Discogs): cuántos discos y qué secciones perdieron alguno
+function catalogLoaded(total, missing = []) {
+  const gone = missing.map(x => `<li><b>${esc(x.name)}</b>: ${x.missing} ${x.missing === 1 ? "disco no está" : "discos no están"} en esta lista</li>`).join("");
+  return Swal.fire({ icon: "success", title: "Catálogo cargado", confirmButtonText: "Listo",
+    html: `<b>${num(total)} discos</b> ya están disponibles en la tienda.${gone ? `<ul style="text-align:left;margin-top:14px">${gone}</ul><p style="font-size:0.9rem">Se ocultan de la tienda hasta que vuelvan a aparecer. Podés quitarlos desde <b>Secciones</b>.</p>` : ""}` });
+}
+
+// --- Discogs ---
+let discogsTimer;
+function renderDiscogs() {
+  const d = status.discogs, j = d.job, who = `Conectada como <b>@${esc(d.user)}</b>.`;
+  $("discogs-panel").hidden = !d.enabled;
+  $("discogs-connect").hidden = !!d.user;
+  $("discogs-import").hidden = $("discogs-disconnect").hidden = !d.user;
+  $("discogs-import").disabled = $("discogs-disconnect").disabled = d.running;
+  const failed = !d.running && j.state === "error";
+  $("discogs-state").classList.toggle("closed", !d.user || failed);
+  $("discogs-state").innerHTML = "<span>" + (!d.user ? "Sin conectar."
+    : d.running ? `Importando… ${num(j.done)}${j.total ? ` de ${num(j.total)}` : ""} discos. Podés seguir usando el admin.`
+    : failed ? `${who} La última importación falló: ${esc(j.message)}`
+    : j.state === "done" ? `${who} Última importación: ${num(j.done)} discos, el ${fmtDate(j.at)}.`
+    : who) + "</span>";
+  clearTimeout(discogsTimer);
+  if (d.running) discogsTimer = setTimeout(pollDiscogs, 2000);
+}
+async function pollDiscogs() {
+  try {
+    const d = (await api("/api/admin/status")).discogs;
+    status.discogs = d;
+    if (d.running) return renderDiscogs();
+    page = 1;
+    await openPanel();  // el catálogo cambió: se recarga todo el panel
+    if (d.job.state === "done") catalogLoaded(d.job.done, d.job.sections_missing);
+    else if (d.job.state === "error") Swal.fire({ icon: "error", title: "No se pudo importar", text: d.job.message });
+  } catch (err) {
+    if (err.status === 401) return showGate();
+    discogsTimer = setTimeout(pollDiscogs, 5000);  // corte de red: reintenta
+  }
+}
+$("discogs-connect").onclick = async e => {
+  e.target.disabled = true;
+  try { location.href = (await api("/api/admin/discogs/connect", { method: "POST" })).url; }
+  catch (err) {
+    e.target.disabled = false;
+    if (err.status === 401) return showGate();
+    Swal.fire({ icon: "error", title: "No se pudo conectar", text: err.message });
+  }
+};
+$("discogs-import").onclick = async () => {
+  if (!await confirmAction({ title: "¿Importar desde Discogs?", text: `Se reemplaza el catálogo actual por los discos que @${status.discogs.user} tiene a la venta en Discogs. Puede tardar un par de minutos.`, confirm: "Importar" })) return;
+  try {
+    status.discogs = await api("/api/admin/discogs/import", { method: "POST" });
+    renderDiscogs();
+  } catch (err) {
+    if (err.status === 401) return showGate();
+    Swal.fire({ icon: "error", title: "No se pudo importar", text: err.message });
+  }
+};
+$("discogs-disconnect").onclick = async () => {
+  if (!await confirmAction({ title: "¿Desconectar Discogs?", text: "El catálogo que ya importaste queda en la tienda. Para volver a importar vas a tener que conectar la cuenta de nuevo.", confirm: "Desconectar" })) return;
+  try {
+    status.discogs = await api("/api/admin/discogs", { method: "DELETE" });
+    renderDiscogs();
+  } catch (err) {
+    if (err.status === 401) return showGate();
+    Swal.fire({ icon: "error", title: "No se pudo desconectar", text: err.message });
+  }
+};
+// vuelta desde Discogs: /{slug}/admin?discogs=ok|denied|error
+{
+  const p = new URLSearchParams(location.search), result = p.get("discogs");
+  if (result) {
+    history.replaceState(null, "", location.pathname);
+    if (result === "ok") toast.fire({ icon: "success", title: "Discogs conectado" });
+    else Swal.fire({ icon: result === "denied" ? "info" : "error", title: result === "denied" ? "No se conectó Discogs" : "No se pudo conectar Discogs",
+                     text: result === "denied" ? "Cancelaste la autorización en Discogs." : p.get("msg") || "Probá de nuevo." });
+  }
+}
+
+// --- datos de contacto ---
+const contactForm = $("contact-form");
+function renderContact() {
+  for (const input of contactForm.querySelectorAll("input")) input.value = status.contact[input.name] || "";
+}
+contactForm.oninput = () => $("contact-error").textContent = "";
+contactForm.onsubmit = async e => {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(contactForm));
+  try {
+    status.contact = (await api("/api/admin/contact", { method: "PUT", body })).contact;
+    renderContact();
+    toast.fire({ icon: "success", title: "Datos de contacto guardados" });
+  } catch (err) {
+    if (err.status === 401) return showGate();
+    $("contact-error").textContent = err.message;
   }
 };
 

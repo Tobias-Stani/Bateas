@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 
 from ..config import DEFAULT_ACCENT, DEFAULT_HIGHLIGHT, DEFAULT_LOGO, MESSAGE, MESSAGE_LINE
-from ..db import get_setting, registry
+from ..db import get_setting, registry, set_settings
 from . import catalog
 
 
@@ -64,6 +64,17 @@ def is_closed(t):
     return bool(c) and datetime.fromisoformat(c) <= datetime.now(timezone.utc)
 
 
+def contact(t):
+    # {"address", "city", "phone", "email", "hours", "instagram"}; lo que no cargaron no viene
+    return json.loads(get_setting(t, "contact") or "{}")
+
+
+def set_contact(t, data):
+    data = {k: v for k, v in data.items() if v}
+    set_settings(t, contact=json.dumps(data, ensure_ascii=False))
+    return data
+
+
 def custom_columns(t):
     # las columnas propias del catálogo cargado: [{"key": "insert", "name": "Insert"}]
     return json.loads(get_setting(t, "custom_columns") or "[]")
@@ -75,7 +86,7 @@ def brand(t):
     # status: solo le llega distinto de "active" al super admin (al resto ya le respondió 423/410)
     return {"name": t["name"], "status": t["status"], "logo": t["logo"] or DEFAULT_LOGO,
             "accent": t["accent"] or DEFAULT_ACCENT, "highlight": t["highlight"] or DEFAULT_HIGHLIGHT,
-            "whatsapp": whatsapp(t), **messages(t), "custom_columns": custom_columns(t)}
+            "whatsapp": whatsapp(t), **messages(t), "custom_columns": custom_columns(t), "contact": contact(t)}
 
 
 def super_view(t):

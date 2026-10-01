@@ -183,6 +183,7 @@ Los tests prueban la API desde afuera, con una base temporal: no tocan tus datos
 | `DATA_DIR` | ya configurada | Dónde viven las bases e imágenes (`/data`). |
 | `STATIC_DIR` | ya configurada en el `Dockerfile` | Producción: el backend también sirve el front. |
 | `SECRET_KEY` | opcional | Firma de cookies. Si falta, se genera una y queda en `/data/secret.key`. |
+| `DISCOGS_KEY` / `DISCOGS_SECRET` | local (`.env`) y Railway, opcionales | La app de Bateas en discogs.com/settings/developers. Sin ellas, el admin no muestra la conexión con Discogs. |
 
 ---
 

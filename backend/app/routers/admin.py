@@ -5,9 +5,9 @@ from .. import validators
 from ..config import MESSAGE, MESSAGE_LINE
 from ..db import get_setting, set_settings
 from ..dependencies import require_admin, tenant
-from ..schemas import Message, Secret, Toggle
+from ..schemas import Contact, Message, Secret, Toggle
 from ..security import admin_token, check_password, clear_tenant_cookie, set_tenant_cookie
-from ..services import catalog, tenants
+from ..services import catalog, discogs, tenants
 
 router = APIRouter(prefix="/api/t/{slug}/admin", tags=["admin"])
 
@@ -29,9 +29,9 @@ def logout(response: Response, slug: str):
 @router.get("/status")
 def status(t: dict = Depends(require_admin)):
     return {"client_code": tenants.client_code(t), "code_required": tenants.code_required(t), "whatsapp": tenants.whatsapp(t),
-            **tenants.messages(t), "custom_columns": tenants.custom_columns(t),
+            **tenants.messages(t), "custom_columns": tenants.custom_columns(t), "contact": tenants.contact(t),
             "filename": get_setting(t, "filename"), "uploaded_at": get_setting(t, "uploaded_at"),
-            "closes_at": tenants.closes_at(t), "closed": tenants.is_closed(t), **catalog.stats(t)}
+            "closes_at": tenants.closes_at(t), "closed": tenants.is_closed(t), "discogs": discogs.status(t), **catalog.stats(t)}
 
 
 @router.put("/code")
@@ -52,6 +52,11 @@ def change_whatsapp(body: Secret, t: dict = Depends(require_admin)):
     number = validators.whatsapp(body.value)
     set_settings(t, whatsapp=number)
     return {"ok": True, "whatsapp": number}
+
+
+@router.put("/contact")
+def change_contact(body: Contact, t: dict = Depends(require_admin)):
+    return {"ok": True, "contact": tenants.set_contact(t, validators.contact(body))}
 
 
 @router.put("/message")

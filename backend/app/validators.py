@@ -1,4 +1,5 @@
 """Validaciones reutilizables: devuelven el valor limpio o cortan con un 400 y un mensaje para la persona."""
+import re
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
@@ -76,6 +77,30 @@ def closing_date(value):
     if when.tzinfo is None:
         fail("La fecha tiene que incluir la zona horaria.")
     return when.astimezone(timezone.utc).isoformat(timespec="minutes")
+
+
+EMAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+INSTAGRAM = re.compile(r"[A-Za-z0-9._]{1,30}")
+
+
+def contact(c):
+    # todo opcional: lo vacío no se muestra en la tienda
+    out = {
+        "address": text(c.address, 0, 150, "La dirección puede tener hasta 150 caracteres."),
+        "city": text(c.city, 0, 80, "La localidad puede tener hasta 80 caracteres."),
+        "phone": text(c.phone, 0, 40, "El teléfono puede tener hasta 40 caracteres."),
+        "email": text(c.email, 0, 120, "El mail puede tener hasta 120 caracteres."),
+        "hours": text(c.hours, 0, 150, "Los horarios pueden tener hasta 150 caracteres."),
+        # acepta "@surco", "surco" o el link del perfil; se guarda solo el usuario
+        "instagram": c.instagram.strip().rstrip("/").rsplit("/", 1)[-1].lstrip("@"),
+    }
+    if out["phone"] and not 6 <= len(digits(out["phone"])) <= 15:
+        fail("El teléfono no parece válido. Escribilo con código de área, por ejemplo 11 4567-8901.")
+    if out["email"] and not EMAIL.fullmatch(out["email"]):
+        fail("El mail no parece válido, por ejemplo hola@tudisqueria.com.")
+    if out["instagram"] and not INSTAGRAM.fullmatch(out["instagram"]):
+        fail("El usuario de Instagram solo puede tener letras, números, puntos y guiones bajos.")
+    return out
 
 
 def message(template, line):

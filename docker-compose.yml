@@ -10,6 +10,9 @@ services:
       # desarrollo: si no está en .env, la contraseña de /super es "super"
       SUPER_PASSWORD: ${SUPER_PASSWORD:-super}
       DATA_DIR: /data
+      # app de Discogs (opcionales: sin ellas el admin no muestra la conexión)
+      DISCOGS_KEY: ${DISCOGS_KEY:-}
+      DISCOGS_SECRET: ${DISCOGS_SECRET:-}
     volumes:
       - ./backend:/app
       - data:/data

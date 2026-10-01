@@ -39,6 +39,15 @@ class Message(BaseModel):
     line: str
 
 
+class Contact(BaseModel):
+    address: str = ""
+    city: str = ""
+    phone: str = ""
+    email: str = ""
+    hours: str = ""
+    instagram: str = ""
+
+
 class ImportPlan(BaseModel):
     header_row: int
     mapping: dict[int, str]  # índice de columna -> campo, "custom", "extra" o "ignore"

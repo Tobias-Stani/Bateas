@@ -87,6 +87,17 @@ label { font-weight: 600; font-size: 0.95rem; display: block; margin-bottom: 6px
 .gate form { background: var(--white); color: var(--ink); padding: 24px; border-radius: 14px; border-top: 6px solid var(--accent); }
 .gate form .btn { width: 100%; margin-top: 16px; }
 
+/* datos de contacto de la disquería (brand.js) */
+.contact dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px 24px; margin: 0; }
+.contact dt { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.contact dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.contact a { font-weight: 600; }
+.store-contact { margin-top: 32px; }
+.store-contact h2 { margin-bottom: 16px; }
+.gate-contact { margin-top: 24px; }
+.gate-contact dl { grid-template-columns: 1fr 1fr; }
+.gate-contact dt { color: #8d929a; }
+
 /* barra superior */
 .topbar {
   background: var(--ink); color: var(--white); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;

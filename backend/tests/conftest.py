@@ -13,6 +13,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 os.environ["DATA_DIR"] = tempfile.mkdtemp(prefix="vinyl-tests-")
 os.environ["SUPER_PASSWORD"] = "s3cret"
 os.environ["STATIC_DIR"] = str(BACKEND.parent / "frontend" / "public")
+os.environ["DISCOGS_KEY"] = os.environ["DISCOGS_SECRET"] = ""  # los tests nunca hablan con Discogs
 sys.path.insert(0, str(BACKEND))
 
 from app.main import app as APP  # noqa: E402

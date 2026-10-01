@@ -1,5 +1,22 @@
 // marca blanca: nombre, logo, colores, WhatsApp y mensaje de cada disquería vienen de /api/t/{slug}/brand
-const BRAND = { name: "", logo: "/logo.svg", whatsapp: "", accent: "", highlight: "", message: "{discos}", message_line: "#{id} - {artist} – {title}", custom_columns: [] };
+const BRAND = { name: "", logo: "/logo.svg", whatsapp: "", accent: "", highlight: "", message: "{discos}", message_line: "#{id} - {artist} – {title}", custom_columns: [], contact: {} };
+
+// datos de contacto en cada <section data-contact> de la página; si la disquería no cargó nada, queda oculta
+function renderBrandContact() {
+  const c = BRAND.contact, where = [c.address, c.city].filter(Boolean).join(", ");
+  const link = (href, text) => `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(text)}</a>`;
+  const rows = [
+    where && ["Dónde", link(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`, where)],
+    c.hours && ["Horarios", esc(c.hours)],
+    c.phone && ["Teléfono", `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ""))}">${esc(c.phone)}</a>`],
+    c.email && ["Mail", `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`],
+    c.instagram && ["Instagram", link(`https://instagram.com/${c.instagram}`, `@${c.instagram}`)],
+  ].filter(Boolean);
+  document.querySelectorAll("[data-contact]").forEach(box => {
+    box.querySelector("dl").innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+    box.hidden = !rows.length;
+  });
+}
 
 document.querySelectorAll("a[data-link]").forEach(a => { a.href = `/${TENANT}${a.dataset.link}`; });
 
@@ -29,6 +46,7 @@ const brandReady = api("/api/brand").then(b => {
     if (img.alt) img.alt = BRAND.name;
   });
   document.querySelector("link[rel=icon]").href = BRAND.logo;
+  renderBrandContact();
   return true;
 }).catch(e => {
   if (![404, 410, 423].includes(e.status)) return true;  // error de red: la página igual intenta cargar
