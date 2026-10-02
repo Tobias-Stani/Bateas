@@ -16,7 +16,7 @@ from ..config import (MAX_ORDER, MP_ACCESS_TOKEN, MP_API, MP_AUTHORIZE, MP_CLIEN
                       MP_FEE_PERCENT, MP_TEST)
 from ..db import db, get_setting, now, set_settings
 from ..security import same
-from . import audit, catalog
+from . import audit, catalog, plans
 
 log = logging.getLogger("uvicorn.error")  # el motivo de un rechazo de Mercado Pago queda en el log del servidor
 PRICE = re.compile(r"\d+(\.\d+)?")  # mismo criterio que fmtPrice del front: sin moneda = pesos
@@ -108,12 +108,14 @@ def disconnect(t):
 
 def payments_on(t):
     # lo que mira la tienda: la disquería lo prendió, tiene la cuenta conectada y el servidor tiene la app
-    return enabled() and connected(t) and get_setting(t, "payments", "0") == "1"
+    return enabled() and connected(t) and get_setting(t, "payments", "0") == "1" and plans.premium(t)
 
 
 def set_payments(t, on):
     if on and not connected(t):
         raise HTTPException(400, "Primero conectá tu cuenta de Mercado Pago.")
+    if on and not plans.premium(t):
+        raise HTTPException(403, "Cobrar online es parte del plan Premium.")
     set_settings(t, payments="1" if on else "0")
 
 

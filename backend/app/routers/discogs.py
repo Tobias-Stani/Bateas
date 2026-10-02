@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from ..dependencies import actor, require_admin
-from ..services import audit, discogs, tenants
+from ..services import audit, discogs, plans, tenants
 
 router = APIRouter(tags=["discogs"])
 ADMIN = "/api/t/{slug}/admin/discogs"
@@ -15,6 +15,7 @@ ADMIN = "/api/t/{slug}/admin/discogs"
 def connect(request: Request, t: dict = Depends(require_admin)):
     if not discogs.enabled():
         raise HTTPException(400, "La conexión con Discogs no está configurada en el servidor.")
+    plans.require_premium(t, "Importar desde Discogs")
     # Discogs vuelve a esta dirección; base_url respeta el dominio y el https del proxy
     callback = f"{request.base_url}api/discogs/callback?slug={t['slug']}"
     return {"url": discogs.start(t, callback)}
@@ -37,6 +38,7 @@ def callback(slug: str, oauth_token: str = "", oauth_verifier: str = "", denied:
 
 @router.post(f"{ADMIN}/import")
 def start_import(tasks: BackgroundTasks, t: dict = Depends(require_admin), who: str = Depends(actor)):
+    plans.require_premium(t, "Importar desde Discogs")
     discogs.begin(t)
     audit.log(t["slug"], who, "discogs_import_started", user=discogs.user(t))
     tasks.add_task(discogs.import_inventory, t)

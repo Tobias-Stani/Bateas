@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 
 from .. import validators
 from ..config import STATUSES, SUPER_PASSWORD
-from ..db import now, set_settings
+from ..db import now
 from ..dependencies import require_super
 from ..schemas import NewTenant, Secret, TenantPatch
 from ..security import clear_super_cookie, hash_password, same, set_super_cookie
-from ..services import audit, catalog, mercadopago, tenants
+from ..services import accounts, audit, catalog, mercadopago, tenants
 from ..storage import remove_tenant_storage
 
 router = APIRouter(prefix="/api/super", tags=["super admin"])
@@ -40,16 +40,11 @@ def list_tenants():
 @router.post("/tenants", dependencies=protected)
 def create(body: NewTenant):
     name, slug = validators.tenant_name(body.name), validators.slug(body.slug)
-    if tenants.find(slug):
-        raise HTTPException(409, f"Ya existe una disquería en /{slug}.")
     code, password = validators.client_code(body.client_code), validators.admin_password(body.admin_password)
     number = validators.whatsapp(body.whatsapp) if body.whatsapp.strip() else ""
-    remove_tenant_storage(slug)  # restos de una disquería eliminada con el mismo slug
-    set_settings({"slug": slug}, client_code=code, whatsapp=number)
-    tenants.update_registry("INSERT INTO tenants (slug, name, admin_hash, created_at, status_at) VALUES (?, ?, ?, ?, ?)",
-                            (slug, name, hash_password(password), now(), now()))
+    t = tenants.create(name, slug, password, code, number)
     audit.log(slug, "super", "tenant_created", name=name)
-    return tenants.super_view(tenants.find(slug))
+    return tenants.super_view(t)
 
 
 @router.patch("/tenants/{slug}", dependencies=protected)
@@ -65,6 +60,10 @@ def update(slug: str, body: TenantPatch):
         changes["logo"] = validators.logo(changes["logo"])
     if "notes" in changes and len(changes["notes"]) > 2000:
         validators.fail("Las notas son demasiado largas.")
+    if "plan" in changes:
+        changes["plan"] = validators.plan(changes["plan"])
+    if "premium_until" in changes:
+        changes["premium_until"] = validators.premium_until(changes["premium_until"])
     if changes:
         tenants.update_registry(f"UPDATE tenants SET {', '.join(f'{k} = ?' for k in changes)} WHERE slug = ?", [*changes.values(), slug])
         changed = {k: [before[k], v] for k, v in changes.items() if before[k] != v}  # [antes, después]
@@ -121,6 +120,11 @@ def events(slug: str = "", kind: str = "", before: int = 0, limit: int = 100):
 @router.get("/payments", dependencies=protected)
 def payments(slug: str = ""):
     return audit.payments(slug)
+
+
+@router.get("/accounts", dependencies=protected)
+def list_accounts():
+    return accounts.all_accounts()
 
 
 @router.post("/reconcile", dependencies=protected)

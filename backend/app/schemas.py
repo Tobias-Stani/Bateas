@@ -24,12 +24,19 @@ class NewTenant(BaseModel):
     whatsapp: str = ""
 
 
+class NewStore(BaseModel):
+    name: str
+    slug: str
+
+
 class TenantPatch(BaseModel):
     name: str | None = None
     logo: str | None = None
     accent: str | None = None
     highlight: str | None = None
     notes: str | None = None
+    plan: str | None = None
+    premium_until: str | None = None  # fecha ISO, o "" = sin vencimiento
 
 
 # --- admin de la disquería ---

@@ -54,6 +54,21 @@ def client_token(t, code):
     return sign(f"client:{t['slug']}:{code}")
 
 
+def account_token(account):
+    # incluye el id de Google: si se borra y recrea la cuenta, la cookie vieja no sirve
+    signature = sign(f"account:{account['id']}:{account['google_sub']}")
+    return f"{account['id']}.{signature}"
+
+
+def set_account_cookie(response, account):
+    # path /api: el dueño entra al admin de su disquería con esta cookie, sin contraseña
+    response.set_cookie("account", account_token(account), httponly=True, samesite="lax", max_age=MONTH, path="/api")
+
+
+def clear_account_cookie(response):
+    response.delete_cookie("account", path="/api")
+
+
 def set_tenant_cookie(response, t, name, value, samesite):
     # path de la disquería: el navegador no la manda a las APIs de otras
     response.set_cookie(name, value, httponly=True, samesite=samesite, max_age=MONTH, path=f"/api/t/{t['slug']}")

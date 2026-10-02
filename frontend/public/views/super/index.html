@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Super admin</title>
+<link rel="icon" href="/assets/img/logo.svg">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/views/super/super.css">
+</head>
+<body>
+
+<!-- ingreso -->
+<section id="gate" class="gate" hidden>
+  <div class="gate-box">
+    <img class="logo" src="/assets/img/logo.svg" alt="">
+    <h1>Super admin</h1>
+    <p class="lead">Creá y administrá las disquerías de la plataforma.</p>
+    <form id="login" novalidate>
+      <label for="password">Contraseña de super admin</label>
+      <input id="password" class="field" type="password" autocomplete="current-password" required aria-describedby="login-error">
+      <p id="login-error" class="error" role="alert"></p>
+      <button class="btn">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <a class="brand" href="/super"><img src="/assets/img/logo.svg" alt=""><span>Super admin</span></a>
+    <span class="spacer"></span>
+    <button id="logout" class="btn btn-outline btn-sm">Salir</button>
+  </header>
+
+  <!-- lista -->
+  <main id="list-view" class="page">
+    <div class="stats">
+      <div class="stat"><strong id="s-total">0</strong><span>Disquerías</span></div>
+      <div class="stat"><strong id="s-active">0</strong><span>Activas</span></div>
+      <div class="stat"><strong id="s-suspended">0</strong><span>Suspendidas</span></div>
+      <div class="stat"><strong id="s-cancelled">0</strong><span>Canceladas</span></div>
+    </div>
+
+    <p class="stats-title">Pagos online</p>
+    <div id="mp-notice"></div>
+    <div class="stats">
+      <div class="stat"><strong id="p-sales">0</strong><span>Ventas pagadas</span><small id="p-sales-month"></small></div>
+      <div class="stat"><strong id="p-total">$ 0</strong><span>Cobrado por las disquerías</span><small id="p-total-month"></small></div>
+      <div class="stat"><strong id="p-fee">$ 0</strong><span id="p-fee-label">Comisión de Bateas</span><small id="p-fee-month"></small></div>
+      <div class="stat"><strong id="p-stores">0</strong><span>Disquerías cobrando online</span><small id="p-connected"></small></div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Secciones del panel">
+      <button role="tab" data-tab="tenants" aria-selected="true">Disquerías</button>
+      <button role="tab" data-tab="accounts" aria-selected="false">Cuentas</button>
+      <button role="tab" data-tab="payments" aria-selected="false">Pagos</button>
+      <button role="tab" data-tab="activity" aria-selected="false">Actividad</button>
+    </nav>
+
+    <section id="tab-accounts" hidden aria-label="Cuentas">
+      <div class="head">
+        <h2>Cuentas</h2>
+        <input id="acc-q" class="field" type="search" placeholder="Buscar por mail o nombre" aria-label="Buscar cuentas">
+      </div>
+      <p id="acc-hint" class="hint" style="margin-bottom:12px"></p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>Mail</th><th>Nombre</th><th>Tienda</th><th>Se registró</th><th>Último ingreso</th><th>Estado</th></tr></thead>
+          <tbody id="acc-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-payments" hidden aria-label="Pagos">
+      <div class="head">
+        <h2>Pagos</h2>
+        <select id="pay-store" class="field" aria-label="Filtrar pagos por disquería"><option value="">Todas las disquerías</option></select>
+        <button id="pay-sync" class="btn btn-outline btn-sm">Buscar pagos sin confirmar</button>
+        <button id="pay-csv" class="btn btn-outline btn-sm">Descargar CSV</button>
+      </div>
+      <p class="hint" style="margin-bottom:12px">Cada pago que informó Mercado Pago, aprobado o no. Queda guardado aunque se elimine la disquería.</p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>Fecha</th><th>Disquería</th><th>Pedido</th><th>Estado</th><th class="num">Total</th><th class="num">Mercado Pago</th><th class="num">Bateas</th><th class="num">Disquería</th><th>Pagó</th><th>Pago MP</th></tr></thead>
+          <tbody id="pay-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-activity" hidden aria-label="Actividad">
+      <div class="head">
+        <h2>Actividad</h2>
+        <select id="ev-store" class="field" aria-label="Filtrar actividad por disquería"><option value="">Toda la plataforma</option></select>
+        <select id="ev-kind" class="field" aria-label="Filtrar actividad por tipo"><option value="">Todo</option></select>
+      </div>
+      <p id="ev-hint" class="hint" style="margin-bottom:12px"></p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>Cuándo</th><th>Disquería</th><th>Quién</th><th>Qué pasó</th></tr></thead>
+          <tbody id="ev-rows"></tbody>
+        </table>
+      </div>
+      <div class="more"><button id="ev-more" class="btn btn-outline btn-sm" hidden>Cargar más</button></div>
+    </section>
+
+    <section id="tab-tenants" aria-label="Disquerías">
+
+    <section id="create" class="panel" style="margin-bottom:24px" hidden aria-labelledby="h-create">
+      <h2 id="h-create">Nueva disquería</h2>
+      <p class="hint" style="margin-bottom:18px">Al crearla queda activa. Pasale al dueño el link del admin y su contraseña.</p>
+      <form id="create-form" novalidate>
+        <div class="form-grid">
+          <div>
+            <label for="c-name">Nombre</label>
+            <input id="c-name" class="field" maxlength="80" autocomplete="off" placeholder="Disquería El Surco">
+          </div>
+          <div>
+            <label for="c-slug">Dirección</label>
+            <div class="prefix"><span id="c-origin"></span><input id="c-slug" class="field" maxlength="40" autocomplete="off" placeholder="el-surco" spellcheck="false"></div>
+          </div>
+          <div>
+            <label for="c-password">Contraseña del admin</label>
+            <div class="with-btn">
+              <input id="c-password" class="field" minlength="6" autocomplete="off" spellcheck="false">
+              <button id="c-generate" type="button" class="btn btn-outline btn-sm">Generar</button>
+            </div>
+          </div>
+          <div>
+            <label for="c-code">Código de acceso para clientes</label>
+            <input id="c-code" class="field" minlength="4" maxlength="64" autocomplete="off" spellcheck="false">
+          </div>
+          <div>
+            <label for="c-wa">WhatsApp de pedidos <span class="hint">(opcional)</span></label>
+            <input id="c-wa" class="field" type="tel" inputmode="tel" autocomplete="off" placeholder="54 9 11 1234 5678">
+          </div>
+        </div>
+        <p id="create-error" class="error" role="alert"></p>
+        <div class="form-actions">
+          <button class="btn">Crear disquería</button>
+          <button id="create-cancel" type="button" class="btn-text">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="head">
+      <h2>Disquerías</h2>
+      <input id="q" class="field" type="search" placeholder="Buscar por nombre o dirección" aria-label="Buscar disquerías">
+      <select id="filter" class="field" aria-label="Filtrar por estado">
+        <option value="">Todos los estados</option>
+        <option value="active">Activas</option>
+        <option value="suspended">Suspendidas</option>
+        <option value="cancelled">Canceladas</option>
+      </select>
+      <button id="new" class="btn btn-sm">Nueva disquería</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Disquería</th><th>Estado</th><th>Plan</th><th class="num">Discos</th><th>Último catálogo</th><th>Mercado Pago</th><th class="num">Ventas online</th><th>WhatsApp</th><th>Creada</th><th>Links</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    </section>
+  </main>
+
+  <!-- detalle -->
+  <main id="detail-view" class="page" hidden>
+    <button id="back" class="btn-text" style="margin-bottom:12px">← Todas las disquerías</button>
+    <div class="detail-head">
+      <img id="d-logo" src="/assets/img/logo.svg" alt="">
+      <div>
+        <h2 id="d-name"></h2>
+        <span id="d-status" class="chip"></span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="stack">
+        <section class="panel" aria-labelledby="h-brand">
+          <h3 id="h-brand">Datos y marca</h3>
+          <p class="hint">Así se ve la disquería en su tienda y su admin.</p>
+          <form id="brand-form" novalidate>
+            <div class="form-grid">
+              <div class="wide">
+                <label for="d-name-input">Nombre</label>
+                <input id="d-name-input" class="field" maxlength="80">
+              </div>
+              <div class="wide">
+                <label for="d-logo-input">Logo <span class="hint">(URL https; vacío = logo genérico)</span></label>
+                <input id="d-logo-input" class="field" maxlength="500" placeholder="https://…/logo.png" spellcheck="false">
+              </div>
+              <div class="wide colors">
+                <div><label for="d-accent">Color principal</label><input id="d-accent" type="color"></div>
+                <div><label for="d-highlight">Color de etiquetas</label><input id="d-highlight" type="color"></div>
+              </div>
+              <div class="wide">
+                <label for="d-notes">Notas internas <span class="hint">(solo las ves vos)</span></label>
+                <textarea id="d-notes" class="field" rows="3" maxlength="2000" placeholder="Contacto, plan, fecha de cobro…"></textarea>
+              </div>
+            </div>
+            <p id="brand-error" class="error" role="alert"></p>
+            <button class="btn">Guardar cambios</button>
+          </form>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="panel" aria-labelledby="h-links">
+          <h3 id="h-links">Links</h3>
+          <p class="hint">Como super admin entrás a cualquier admin sin contraseña, aunque esté suspendida.</p>
+          <div class="links">
+            <div><b>Tienda</b> <code id="d-store-url"></code> <a id="d-store" class="btn-text" target="_blank" rel="noopener">Abrir</a></div>
+            <div><b>Admin</b> <code id="d-admin-url"></code> <a id="d-admin" class="btn-text" target="_blank" rel="noopener">Abrir</a></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="h-facts">
+          <h3 id="h-facts">Uso</h3>
+          <dl id="d-facts" class="facts" style="margin-top:12px"></dl>
+        </section>
+
+        <section class="panel" aria-labelledby="h-d-activity">
+          <h3 id="h-d-activity">Actividad reciente</h3>
+          <p class="hint">Lo último que pasó en esta disquería. El historial completo está en la pestaña Actividad.</p>
+          <div class="table-wrap"><table class="log"><tbody id="d-activity"></tbody></table></div>
+        </section>
+
+        <section class="panel" aria-labelledby="h-plan">
+          <h3 id="h-plan">Plan</h3>
+          <p class="hint">Gratis: hasta 50 discos, 1 banner y 1 sección. Premium: sin límites. Si ponés una fecha, el Premium vence solo ese día y vuelve a Gratis.</p>
+          <form id="plan-form" class="form-grid" novalidate>
+            <div><label for="d-plan">Plan</label>
+              <select id="d-plan" class="field"><option value="free">Gratis</option><option value="premium">Premium</option></select></div>
+            <div><label for="d-until">Premium hasta <span class="hint">(vacío = sin vencimiento)</span></label>
+              <input id="d-until" class="field" type="date"></div>
+            <p id="d-plan-now" class="hint wide"></p>
+            <div class="wide"><button class="btn btn-sm">Guardar plan</button></div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="h-access">
+          <h3 id="h-access">Acceso del admin</h3>
+          <p class="hint">Si el dueño perdió la contraseña, generale una nueva. Las sesiones abiertas se cierran.</p>
+          <button id="reset-password" class="btn btn-outline btn-sm">Nueva contraseña</button>
+        </section>
+
+        <section class="panel" aria-labelledby="h-status">
+          <h3 id="h-status">Estado</h3>
+          <p id="d-status-hint" class="hint"></p>
+          <div id="status-actions" class="status-actions"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script src="/views/super/super.js"></script>
+</body>
+</html>

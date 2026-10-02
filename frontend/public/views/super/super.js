@@ -1,314 +1,5 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Super admin</title>
-<link rel="icon" href="/logo.svg">
-<link rel="stylesheet" href="/style.css">
-<style>
-  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
-  @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .stat { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
-  .stat strong { display: block; font-size: 2.2rem; font-weight: 900; font-stretch: 75%; line-height: 1.1; font-variant-numeric: tabular-nums; }
-  .stat span { color: var(--muted); font-size: 0.9rem; }
+// Panel del super admin: disquerías, cuentas, pagos y actividad.
 
-  .head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
-  .head h2 { margin-right: auto; }
-  .head .field { width: auto; min-width: 200px; padding: 9px 12px; }
-
-  .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
-  @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-grid .wide { grid-column: 1 / -1; }
-  .with-btn { display: flex; gap: 8px; }
-  .with-btn .field { flex: 1; min-width: 0; }
-  .prefix { display: flex; align-items: center; border: 2px solid var(--line); border-radius: var(--radius); background: var(--white); }
-  .prefix:focus-within { border-color: var(--accent); }
-  .prefix span { padding-left: 14px; color: var(--muted); white-space: nowrap; }
-  .prefix .field { border: 0; padding-left: 2px; }
-  .form-actions { display: flex; gap: 12px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
-
-  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
-  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
-  th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: middle; }
-  th { background: var(--paper); font-weight: 700; }
-  tr:last-child td { border-bottom: 0; }
-  tbody tr { cursor: pointer; }
-  tbody tr:hover { background: #f6f8f9; }
-  td .name { font-weight: 700; display: block; }
-  td small { color: var(--muted); }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-
-  .row-links { display: inline-flex; gap: 14px; }
-  .row-links a { color: var(--accent-dark); font-weight: 600; text-decoration: none; }
-  .row-links a:hover { text-decoration: underline; }
-  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-  .chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-  .chip.active { background: #e3f3ea; color: var(--green); }
-  .chip.suspended { background: #fdf1d8; color: #9a6a00; }
-  .chip.cancelled { background: #f7e1e0; color: var(--red); }
-
-  .detail-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-  .detail-head img { width: 64px; height: 64px; border-radius: 50%; background: var(--ink); }
-  .detail-head h2 { font-size: 2rem; }
-  .detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
-  .stack { display: grid; gap: 24px; }
-  .panel h3 { margin-bottom: 6px; }
-  .panel > .hint { margin-bottom: 18px; }
-  .links { display: grid; gap: 10px; }
-  .links div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .links code { background: var(--paper); padding: 4px 8px; border-radius: 6px; font-size: 0.88rem; word-break: break-all; }
-  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 0.92rem; }
-  .facts dt { color: var(--muted); }
-  .facts dd { margin: 0; }
-  .colors { display: flex; gap: 20px; flex-wrap: wrap; }
-  .colors input[type=color] { width: 56px; height: 40px; border: 2px solid var(--line); border-radius: 8px; padding: 2px; background: var(--white); cursor: pointer; }
-  textarea.field { resize: vertical; font: inherit; }
-  .status-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn-danger { background: var(--red); border-color: var(--red); }
-  .btn-danger:hover { background: #a72822; }
-
-  /* pagos y actividad */
-  .stat small { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
-  .stats-title { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
-  .notice { border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; background: #fdf1d8; color: #7a5300; }
-  .notice.bad { background: #f7e1e0; color: var(--red); }
-  .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin: 8px 0 20px; }
-  .tabs button { border: 0; background: none; font: inherit; font-weight: 700; padding: 10px 16px; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
-  .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
-  .log td { white-space: normal; vertical-align: top; }
-  .log td:first-child { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .log tbody tr { cursor: default; }
-  .who { font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--paper); white-space: nowrap; }
-  .who.super { background: #e8ecff; color: #3346a8; }
-  .who.mercadopago { background: #e1f3fb; color: #00709f; }
-  .who.client { background: #e3f3ea; color: var(--green); }
-  .what { font-weight: 700; display: block; }
-  .what.bad { color: var(--red); }
-  .more { display: flex; justify-content: center; margin-top: 14px; }
-</style>
-</head>
-<body>
-
-<!-- ingreso -->
-<section id="gate" class="gate" hidden>
-  <div class="gate-box">
-    <img class="logo" src="/logo.svg" alt="">
-    <h1>Super admin</h1>
-    <p class="lead">Creá y administrá las disquerías de la plataforma.</p>
-    <form id="login" novalidate>
-      <label for="password">Contraseña de super admin</label>
-      <input id="password" class="field" type="password" autocomplete="current-password" required aria-describedby="login-error">
-      <p id="login-error" class="error" role="alert"></p>
-      <button class="btn">Entrar</button>
-    </form>
-  </div>
-</section>
-
-<div id="app" hidden>
-  <header class="topbar">
-    <a class="brand" href="/super"><img src="/logo.svg" alt=""><span>Super admin</span></a>
-    <span class="spacer"></span>
-    <button id="logout" class="btn btn-outline btn-sm">Salir</button>
-  </header>
-
-  <!-- lista -->
-  <main id="list-view" class="page">
-    <div class="stats">
-      <div class="stat"><strong id="s-total">0</strong><span>Disquerías</span></div>
-      <div class="stat"><strong id="s-active">0</strong><span>Activas</span></div>
-      <div class="stat"><strong id="s-suspended">0</strong><span>Suspendidas</span></div>
-      <div class="stat"><strong id="s-cancelled">0</strong><span>Canceladas</span></div>
-    </div>
-
-    <p class="stats-title">Pagos online</p>
-    <div id="mp-notice"></div>
-    <div class="stats">
-      <div class="stat"><strong id="p-sales">0</strong><span>Ventas pagadas</span><small id="p-sales-month"></small></div>
-      <div class="stat"><strong id="p-total">$ 0</strong><span>Cobrado por las disquerías</span><small id="p-total-month"></small></div>
-      <div class="stat"><strong id="p-fee">$ 0</strong><span id="p-fee-label">Comisión de Bateas</span><small id="p-fee-month"></small></div>
-      <div class="stat"><strong id="p-stores">0</strong><span>Disquerías cobrando online</span><small id="p-connected"></small></div>
-    </div>
-
-    <nav class="tabs" role="tablist" aria-label="Secciones del panel">
-      <button role="tab" data-tab="tenants" aria-selected="true">Disquerías</button>
-      <button role="tab" data-tab="payments" aria-selected="false">Pagos</button>
-      <button role="tab" data-tab="activity" aria-selected="false">Actividad</button>
-    </nav>
-
-    <section id="tab-payments" hidden aria-label="Pagos">
-      <div class="head">
-        <h2>Pagos</h2>
-        <select id="pay-store" class="field" aria-label="Filtrar pagos por disquería"><option value="">Todas las disquerías</option></select>
-        <button id="pay-sync" class="btn btn-outline btn-sm">Buscar pagos sin confirmar</button>
-        <button id="pay-csv" class="btn btn-outline btn-sm">Descargar CSV</button>
-      </div>
-      <p class="hint" style="margin-bottom:12px">Cada pago que informó Mercado Pago, aprobado o no. Queda guardado aunque se elimine la disquería.</p>
-      <div class="table-wrap">
-        <table class="log">
-          <thead><tr><th>Fecha</th><th>Disquería</th><th>Pedido</th><th>Estado</th><th class="num">Total</th><th class="num">Mercado Pago</th><th class="num">Bateas</th><th class="num">Disquería</th><th>Pagó</th><th>Pago MP</th></tr></thead>
-          <tbody id="pay-rows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="tab-activity" hidden aria-label="Actividad">
-      <div class="head">
-        <h2>Actividad</h2>
-        <select id="ev-store" class="field" aria-label="Filtrar actividad por disquería"><option value="">Toda la plataforma</option></select>
-        <select id="ev-kind" class="field" aria-label="Filtrar actividad por tipo"><option value="">Todo</option></select>
-      </div>
-      <p id="ev-hint" class="hint" style="margin-bottom:12px"></p>
-      <div class="table-wrap">
-        <table class="log">
-          <thead><tr><th>Cuándo</th><th>Disquería</th><th>Quién</th><th>Qué pasó</th></tr></thead>
-          <tbody id="ev-rows"></tbody>
-        </table>
-      </div>
-      <div class="more"><button id="ev-more" class="btn btn-outline btn-sm" hidden>Cargar más</button></div>
-    </section>
-
-    <section id="tab-tenants" aria-label="Disquerías">
-
-    <section id="create" class="panel" style="margin-bottom:24px" hidden aria-labelledby="h-create">
-      <h2 id="h-create">Nueva disquería</h2>
-      <p class="hint" style="margin-bottom:18px">Al crearla queda activa. Pasale al dueño el link del admin y su contraseña.</p>
-      <form id="create-form" novalidate>
-        <div class="form-grid">
-          <div>
-            <label for="c-name">Nombre</label>
-            <input id="c-name" class="field" maxlength="80" autocomplete="off" placeholder="Disquería El Surco">
-          </div>
-          <div>
-            <label for="c-slug">Dirección</label>
-            <div class="prefix"><span id="c-origin"></span><input id="c-slug" class="field" maxlength="40" autocomplete="off" placeholder="el-surco" spellcheck="false"></div>
-          </div>
-          <div>
-            <label for="c-password">Contraseña del admin</label>
-            <div class="with-btn">
-              <input id="c-password" class="field" minlength="6" autocomplete="off" spellcheck="false">
-              <button id="c-generate" type="button" class="btn btn-outline btn-sm">Generar</button>
-            </div>
-          </div>
-          <div>
-            <label for="c-code">Código de acceso para clientes</label>
-            <input id="c-code" class="field" minlength="4" maxlength="64" autocomplete="off" spellcheck="false">
-          </div>
-          <div>
-            <label for="c-wa">WhatsApp de pedidos <span class="hint">(opcional)</span></label>
-            <input id="c-wa" class="field" type="tel" inputmode="tel" autocomplete="off" placeholder="54 9 11 1234 5678">
-          </div>
-        </div>
-        <p id="create-error" class="error" role="alert"></p>
-        <div class="form-actions">
-          <button class="btn">Crear disquería</button>
-          <button id="create-cancel" type="button" class="btn-text">Cancelar</button>
-        </div>
-      </form>
-    </section>
-
-    <div class="head">
-      <h2>Disquerías</h2>
-      <input id="q" class="field" type="search" placeholder="Buscar por nombre o dirección" aria-label="Buscar disquerías">
-      <select id="filter" class="field" aria-label="Filtrar por estado">
-        <option value="">Todos los estados</option>
-        <option value="active">Activas</option>
-        <option value="suspended">Suspendidas</option>
-        <option value="cancelled">Canceladas</option>
-      </select>
-      <button id="new" class="btn btn-sm">Nueva disquería</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Disquería</th><th>Estado</th><th class="num">Discos</th><th>Último catálogo</th><th>Mercado Pago</th><th class="num">Ventas online</th><th>WhatsApp</th><th>Creada</th><th>Links</th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-    </section>
-  </main>
-
-  <!-- detalle -->
-  <main id="detail-view" class="page" hidden>
-    <button id="back" class="btn-text" style="margin-bottom:12px">← Todas las disquerías</button>
-    <div class="detail-head">
-      <img id="d-logo" src="/logo.svg" alt="">
-      <div>
-        <h2 id="d-name"></h2>
-        <span id="d-status" class="chip"></span>
-      </div>
-    </div>
-
-    <div class="detail-grid">
-      <div class="stack">
-        <section class="panel" aria-labelledby="h-brand">
-          <h3 id="h-brand">Datos y marca</h3>
-          <p class="hint">Así se ve la disquería en su tienda y su admin.</p>
-          <form id="brand-form" novalidate>
-            <div class="form-grid">
-              <div class="wide">
-                <label for="d-name-input">Nombre</label>
-                <input id="d-name-input" class="field" maxlength="80">
-              </div>
-              <div class="wide">
-                <label for="d-logo-input">Logo <span class="hint">(URL https; vacío = logo genérico)</span></label>
-                <input id="d-logo-input" class="field" maxlength="500" placeholder="https://…/logo.png" spellcheck="false">
-              </div>
-              <div class="wide colors">
-                <div><label for="d-accent">Color principal</label><input id="d-accent" type="color"></div>
-                <div><label for="d-highlight">Color de etiquetas</label><input id="d-highlight" type="color"></div>
-              </div>
-              <div class="wide">
-                <label for="d-notes">Notas internas <span class="hint">(solo las ves vos)</span></label>
-                <textarea id="d-notes" class="field" rows="3" maxlength="2000" placeholder="Contacto, plan, fecha de cobro…"></textarea>
-              </div>
-            </div>
-            <p id="brand-error" class="error" role="alert"></p>
-            <button class="btn">Guardar cambios</button>
-          </form>
-        </section>
-      </div>
-
-      <div class="stack">
-        <section class="panel" aria-labelledby="h-links">
-          <h3 id="h-links">Links</h3>
-          <p class="hint">Como super admin entrás a cualquier admin sin contraseña, aunque esté suspendida.</p>
-          <div class="links">
-            <div><b>Tienda</b> <code id="d-store-url"></code> <a id="d-store" class="btn-text" target="_blank" rel="noopener">Abrir</a></div>
-            <div><b>Admin</b> <code id="d-admin-url"></code> <a id="d-admin" class="btn-text" target="_blank" rel="noopener">Abrir</a></div>
-          </div>
-        </section>
-
-        <section class="panel" aria-labelledby="h-facts">
-          <h3 id="h-facts">Uso</h3>
-          <dl id="d-facts" class="facts" style="margin-top:12px"></dl>
-        </section>
-
-        <section class="panel" aria-labelledby="h-d-activity">
-          <h3 id="h-d-activity">Actividad reciente</h3>
-          <p class="hint">Lo último que pasó en esta disquería. El historial completo está en la pestaña Actividad.</p>
-          <div class="table-wrap"><table class="log"><tbody id="d-activity"></tbody></table></div>
-        </section>
-
-        <section class="panel" aria-labelledby="h-access">
-          <h3 id="h-access">Acceso del admin</h3>
-          <p class="hint">Si el dueño perdió la contraseña, generale una nueva. Las sesiones abiertas se cierran.</p>
-          <button id="reset-password" class="btn btn-outline btn-sm">Nueva contraseña</button>
-        </section>
-
-        <section class="panel" aria-labelledby="h-status">
-          <h3 id="h-status">Estado</h3>
-          <p id="d-status-hint" class="hint"></p>
-          <div id="status-actions" class="status-actions"></div>
-        </section>
-      </div>
-    </div>
-  </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-<script src="/common.js"></script>
-<script>
 const STATUS = { active: "Activa", suspended: "Suspendida", cancelled: "Cancelada" };
 const STATUS_HINT = {
   active: "La tienda y el admin funcionan normalmente.",
@@ -328,15 +19,19 @@ const KIND = {
   discogs_import_started: "Importación de Discogs iniciada", discogs_import_failed: "Falló la importación de Discogs",
   mp_connected: "Mercado Pago conectado", mp_connect_failed: "Falló la conexión con Mercado Pago", mp_disconnected: "Mercado Pago desconectado",
   mp_payments: "Cobro online", checkout_started: "Un cliente fue a pagar", payment: "Pago",
+  account_created: "Cuenta nueva con Google", account_login: "Ingresó con Google", premium_requested: "Pidió pasarse a Premium",
 };
 const BAD = new Set(["super_login_failed", "admin_login_failed", "discogs_connect_failed", "discogs_import_failed", "mp_connect_failed", "tenant_deleted"]);
-const ACTOR = { super: "Vos", admin: "Disquería", client: "Cliente", mercadopago: "Mercado Pago", system: "Sistema" };
+const ACTOR = { account: "Dueño", super: "Vos", admin: "Disquería", client: "Cliente", mercadopago: "Mercado Pago", system: "Sistema" };
 const FIELD = { client_code: "Código de acceso", code_required: "Pedir código", whatsapp: "WhatsApp", contact: "Datos de contacto",
                 message: "Mensaje del pedido", closes_at: "Fecha de cierre" };
 const PAY = { approved: "Pagado", pending: "Pendiente", in_process: "En revisión", authorized: "Autorizado", rejected: "Rechazado",
               cancelled: "Cancelado", refunded: "Devuelto", charged_back: "Contracargo", amount_mismatch: "Monto distinto: revisar" };
 const money = n => n == null ? "—" : fmtPrice(String(Math.round(n * 100) / 100)) || "$ 0";
 const when = iso => new Date(iso).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "medium" });
+// plan asignado y vigente: un Premium vencido ya funciona como Gratis
+const planLabel = t => t.plan_now === "premium" ? `<span class="chip active">Premium</span>${t.premium_until ? `<small> hasta ${shortDate(t.premium_until)}</small>` : ""}`
+  : t.plan === "premium" ? '<span class="chip suspended">Vencido</span>' : "<small>Gratis</small>";
 const nameOf = slug => slug ? (tenants.find(t => t.slug === slug)?.name || `/${slug} (eliminada)`) : "Plataforma";
 function describe(e) {
   const d = e.detail;
@@ -412,8 +107,9 @@ function renderList() {
   const shown = tenants.filter(t => (!f || t.status === f) && (!q || `${t.name} ${t.slug}`.toLowerCase().includes(q)));
   $("rows").innerHTML = shown.length ? shown.map(t => `
     <tr data-slug="${esc(t.slug)}" tabindex="0">
-      <td><span class="name">${esc(t.name)}</span><small>/${esc(t.slug)}</small></td>
+      <td><span class="name">${esc(t.name)}</span><small>/${esc(t.slug)}${t.owner_email ? ` · ${esc(t.owner_email)}` : ""}</small></td>
       <td><span class="chip ${t.status}">${STATUS[t.status]}</span></td>
+      <td>${planLabel(t)}</td>
       <td class="num">${t.total ? num(t.total) : "—"}</td>
       <td>${shortDate(t.uploaded_at)}</td>
       <td>${t.payments ? '<span class="chip active">Cobrando</span>' : t.mp_connected ? "<small>Conectada, apagado</small>" : "<small>—</small>"}</td>
@@ -422,9 +118,10 @@ function renderList() {
       <td>${shortDate(t.created_at)}</td>
       <td><span class="row-links"><a href="/${esc(t.slug)}" target="_blank" rel="noopener">Tienda ↗</a><a href="/${esc(t.slug)}/admin" target="_blank" rel="noopener">Admin ↗</a></span></td>
     </tr>`).join("")
-    : `<tr><td colspan="9" class="hint" style="padding:28px;text-align:center;cursor:default">${tenants.length ? "Nada coincide con la búsqueda." : "Todavía no hay disquerías. Creá la primera con <b>Nueva disquería</b>."}</td></tr>`;
+    : `<tr><td colspan="10" class="hint" style="padding:28px;text-align:center;cursor:default">${tenants.length ? "Nada coincide con la búsqueda." : "Todavía no hay disquerías. Creá la primera con <b>Nueva disquería</b>."}</td></tr>`;
 }
 $("q").oninput = $("filter").onchange = renderList;
+$("mp-notice").onclick = e => { const a = e.target.closest("[data-open]"); if (a) { e.preventDefault(); openDetail(a.dataset.open); } };
 
 // --- pagos online: totales ---
 function renderStats() {
@@ -441,6 +138,12 @@ function renderStats() {
   $("mp-notice").innerHTML = [
     !stats.mp_enabled && `<p class="notice">Mercado Pago no está configurado en el servidor: las disquerías no pueden cobrar online.</p>`,
     stats.mp_test && `<p class="notice">Mercado Pago está en <b>modo prueba</b>: estos pagos no son plata real.</p>`,
+    // pedidos de Premium de los últimos 30 días que todavía no se activaron: hay que contactarlos
+    ...[(() => {
+      const waiting = (stats.premium_requests || []).filter(r => tenants.find(t => t.slug === r.slug && t.plan_now !== "premium"));
+      return waiting.length && `<p class="notice"><b>${waiting.length === 1 ? "1 disquería pidió" : `${waiting.length} disquerías pidieron`} pasarse a Premium:</b>
+        ${waiting.map(r => `<a href="#" data-open="${esc(r.slug)}">${esc(nameOf(r.slug))}</a> (${esc(when(r.at))})`).join(", ")}. Contactalas y activalo desde su detalle.</p>`;
+    })()],
     stats.problems && `<p class="notice bad">${num(stats.problems)} ${stats.problems === 1 ? "pago necesita" : "pagos necesitan"} revisión (devuelto, contracargo o monto distinto). Mirá la pestaña Pagos.</p>`,
   ].filter(Boolean).join("");
   const options = first => first + tenants.map(t => `<option value="${esc(t.slug)}">${esc(t.name)}</option>`).join("");
@@ -454,9 +157,36 @@ document.querySelector(".tabs").onclick = e => {
   const tab = e.target.dataset.tab;
   if (!tab) return;
   document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
-  for (const name of ["tenants", "payments", "activity"]) $(`tab-${name}`).hidden = name !== tab;
+  for (const name of ["tenants", "accounts", "payments", "activity"]) $(`tab-${name}`).hidden = name !== tab;
+  if (tab === "accounts") loadAccounts();
   if (tab === "payments") loadPayments();
   if (tab === "activity") loadEvents(true);
+};
+
+// --- cuentas: los dueños que entran con Google ---
+let accounts = [];
+async function loadAccounts() {
+  try { accounts = await api("/api/super/accounts"); } catch (err) { return handle(err); }
+  renderAccounts();
+}
+function renderAccounts() {
+  const q = $("acc-q").value.trim().toLowerCase();
+  const shown = accounts.filter(a => !q || `${a.email} ${a.name}`.toLowerCase().includes(q));
+  const withStore = accounts.filter(a => a.stores).length;
+  $("acc-hint").textContent = `${num(accounts.length)} ${accounts.length === 1 ? "cuenta" : "cuentas"} · ${num(withStore)} con tienda · ${num(accounts.length - withStore)} se registraron pero todavía no crearon su tienda.`;
+  $("acc-rows").innerHTML = shown.length ? shown.map(a => `<tr>
+    <td><b>${esc(a.email)}</b></td><td>${esc(a.name)}</td>
+    <td>${a.stores ? a.stores.split(",").map(slug => `<a href="#" data-open="${esc(slug)}">${esc(nameOf(slug))}</a>`).join("<br>") : "<small>Sin tienda todavía</small>"}</td>
+    <td>${esc(when(a.created_at))}</td><td>${esc(when(a.last_login_at))}</td>
+    <td>${a.status === "active" ? "Activa" : '<span class="what bad">Bloqueada</span>'}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="hint" style="padding:28px;text-align:center">${accounts.length ? "Nada coincide con la búsqueda." : "Todavía nadie se registró con Google."}</td></tr>`;
+}
+$("acc-q").oninput = renderAccounts;
+$("acc-rows").onclick = e => {
+  const a = e.target.closest("[data-open]");
+  if (!a) return;
+  e.preventDefault();
+  openDetail(a.dataset.open);
 };
 
 // --- pagos: el libro central ---
@@ -570,7 +300,7 @@ function openDetail(slug) {
 function renderDetail(fillForm) {
   const t = current;
   $("d-name").textContent = t.name;
-  $("d-logo").src = t.logo || "/logo.svg";
+  $("d-logo").src = t.logo || "/assets/img/logo.svg";
   $("d-status").className = `chip ${t.status}`;
   $("d-status").textContent = STATUS[t.status];
   $("d-store-url").textContent = storeUrl(t.slug); $("d-store").href = `/${t.slug}`;
@@ -585,6 +315,7 @@ function renderDetail(fillForm) {
     ["Ventas online", (s => s ? `${num(s.n)} · ${money(s.total)} · Bateas ${money(s.fee)}` : "Ninguna")(stats.by_slug[t.slug])],
     ["Discogs", t.discogs_user ? `@${esc(t.discogs_user)}` : "Sin conectar"],
     ["Catálogo", t.filename ? esc(t.filename) : "—"],
+    ["Dueño", t.owner_email ? `${esc(t.owner_email)} (entra con Google)` : "Sin cuenta: entra con contraseña"],
     ["Creada", fmtDate(t.created_at)],
     [`${STATUS[t.status]} desde`, fmtDate(t.status_at)],
   ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
@@ -595,7 +326,10 @@ function renderDetail(fillForm) {
     cancelled: [["activate", "Reactivar", "btn btn-sm"], ["delete", "Eliminar definitivamente", "btn btn-danger btn-sm"]],
   }[t.status];
   $("status-actions").innerHTML = actions.map(([a, label, cls]) => `<button class="${cls}" data-action="${a}">${label}</button>`).join("");
+  $("d-plan-now").innerHTML = `Ahora funciona como: ${planLabel(t)}`;
   if (fillForm) {
+    $("d-plan").value = t.plan;
+    $("d-until").value = t.premium_until ? t.premium_until.slice(0, 10) : "";
     $("d-name-input").value = t.name;
     $("d-logo-input").value = t.logo || "";
     $("d-accent").value = t.accent || "#03a0c4";
@@ -622,6 +356,20 @@ $("brand-form").onsubmit = async e => {
     renderDetail(true);
     toast.fire({ icon: "success", title: "Cambios guardados" });
   } catch (err) { handle(err, $("brand-error")); }
+  finally { setBusy(btn, false); }
+};
+
+$("plan-form").onsubmit = async e => {
+  e.preventDefault();
+  const day = $("d-until").value;  // vence al final de ese día, hora de Argentina
+  const body = { plan: $("d-plan").value, premium_until: day ? new Date(`${day}T23:59:59-03:00`).toISOString() : "" };
+  const btn = e.submitter;
+  setBusy(btn, true, "Guardando…");
+  try {
+    replaceCurrent(await api(`/api/super/tenants/${current.slug}`, { method: "PATCH", body }));
+    renderDetail(true);
+    toast.fire({ icon: "success", title: "Plan guardado" });
+  } catch (err) { handle(err); }
   finally { setBusy(btn, false); }
 };
 
@@ -677,6 +425,3 @@ $("status-actions").onclick = async e => {
 };
 
 openApp().catch(e => e.status === 401 ? showGate() : Swal.fire({ icon: "error", title: "No se pudo abrir el panel", text: e.message }));
-</script>
-</body>
-</html>

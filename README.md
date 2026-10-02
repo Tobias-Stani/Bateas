@@ -71,6 +71,8 @@ bateas/
 └── frontend/
     ├── nginx.conf           desarrollo: mismas rutas que backend/app/static.py
     └── public/              lo que ve el navegador (ver "Frontend")
+        ├── assets/          lo compartido: css/base.css, js/ (common, brand, covers, player), img/
+        └── views/           una carpeta por pantalla, con su index.html, su CSS y su JS
 ```
 
 ---
@@ -129,22 +131,28 @@ backend/app/
 
 ## Frontend
 
-### Páginas
+### Pantallas
 
-| Archivo | Ruta | Qué es |
+Cada pantalla vive en `frontend/public/views/<pantalla>/`: su `index.html`, su `<pantalla>.css` y su JS. Las URLs no cambian; `static.py` (producción) y `nginx.conf` (local) las mapean.
+
+| Carpeta | Ruta | Qué es |
 |---|---|---|
-| `home.html` | `/` | Landing de Bateas (usa `bateas.svg`) |
-| `super.html` | `/super` | Panel del super admin |
-| `index.html` | `/{slug}` | Tienda de una disquería |
-| `admin.html` | `/{slug}/admin` | Admin de una disquería |
+| `views/landing/` | `/` | Landing de Bateas: planes, demo, preguntas |
+| `views/cuenta/` | `/cuenta` | Registro e ingreso con Google; crear la tienda |
+| `views/super/` | `/super` | Panel del super admin: disquerías, cuentas, pagos, actividad |
+| `views/tienda/` | `/{slug}` | Tienda de una disquería |
+| `views/admin/` | `/{slug}/admin` | Admin de una disquería. El JS está en `views/admin/js/`, un archivo por bloque |
 
-| Script / estilo | Para qué |
+**Admin (`views/admin/js/`)**: se cargan en este orden y comparten variables globales (scripts clásicos, sin build). `panel.js` va primero (estado y apertura) e `inicio.js` último (arranque). En el medio, un archivo por bloque del panel: `ingreso`, `catalogo`, `configuracion`, `discogs`, `plan`, `mercadopago`, `contacto`, `mensaje`, `secciones`, `portada`. Para un bloque nuevo: su archivo en esa carpeta y su `<script>` en `views/admin/index.html`, antes de `inicio.js`.
+
+| Compartido (`assets/`) | Para qué |
 |---|---|
-| `style.css` | Tokens de color y componentes compartidos (botones, campos, barra, paneles) |
-| `common.js` | `api()` (fetch con errores), `esc()`, formatos de fecha y precio, armado del mensaje de WhatsApp |
-| `brand.js` | Pide la marca de la disquería y la aplica (nombre, logo, colores). Si la tienda no existe o está suspendida, bloquea la página |
-| `covers.js` | Busca las tapas en Deezer desde el navegador del cliente |
-| `player.js` | Reproductor de fragmentos de 30 s de Deezer |
+| `css/base.css` | Tokens de color y componentes compartidos (botones, campos, barra, paneles) |
+| `js/common.js` | `api()` (fetch con errores), `esc()`, formatos de fecha y precio, armado del mensaje de WhatsApp |
+| `js/brand.js` | Pide la marca de la disquería y la aplica (nombre, logo, colores, contacto). Si la tienda no existe o está suspendida, bloquea la página |
+| `js/covers.js` | Busca las tapas en Deezer desde el navegador del cliente |
+| `js/player.js` | Reproductor de fragmentos de 30 s de Deezer |
+| `img/` | Logos de Bateas (`bateas.svg`) y de las tiendas sin logo propio (`logo.svg`) |
 
 ### Pautas
 
@@ -154,10 +162,9 @@ backend/app/
 4. **Colores desde los tokens** (`var(--accent)`, `var(--highlight)`…). `brand.js` pisa `--accent` y `--highlight` con los de cada disquería: si escribís un color fijo, esa parte no se adapta a la marca.
 5. **Pensá primero en el celular.** La mayoría de los clientes entra desde ahí. Probá a 390 px de ancho y que la página no se desplace hacia el costado.
 6. **Textos en castellano rioplatense, con voseo** ("Subí el Excel", "Elegí"), igual que en el resto de la app.
-7. **Las imágenes se achican en el navegador** antes de subirlas (`shrink()` en `admin.html`): el servidor solo valida y guarda.
+7. **Las imágenes se achican en el navegador** antes de subirlas (`shrink()` en `views/admin/js/portada.js`): el servidor solo valida y guarda.
 8. **No sumes dependencias externas** salvo que hagan un trabajo grande. Hoy solo se usa SweetAlert2 (CDN) y la fuente Archivo (Google Fonts).
 
-> 📌 `admin.html` tiene ~1.000 líneas con el JavaScript adentro. Está pendiente separarlo en módulos por pantalla (`admin/catalog.js`, `admin/sections.js`, `admin/home.js`…).
 
 ---
 
@@ -183,6 +190,7 @@ Los tests prueban la API desde afuera, con una base temporal: no tocan tus datos
 | `DATA_DIR` | ya configurada | Dónde viven las bases e imágenes (`/data`). |
 | `STATIC_DIR` | ya configurada en el `Dockerfile` | Producción: el backend también sirve el front. |
 | `SECRET_KEY` | opcional | Firma de cookies. Si falta, se genera una y queda en `/data/secret.key`. |
+| `GOOGLE_CLIENT_ID` | local (`.env`) y Railway | "Continuar con Google" en `/cuenta` (Google Cloud → proyecto Bateas → Clientes). No es secreto. Orígenes autorizados: `http://localhost:8011` y la URL de Railway. Sin ella, no hay registro. |
 | `MP_CLIENT_ID` / `MP_CLIENT_SECRET` | local (`.env`) y Railway, opcionales | La app de Bateas en Mercado Pago (Tus integraciones). Sin ellas, no hay pagos online. URL de redirección a registrar: `https://bateas-production.up.railway.app/api/mercadopago/callback`. |
 | `MP_FEE_PERCENT` | local y Railway | Comisión de Bateas sobre cada venta, en % (ej. `5`). Por defecto `0`. |
 | `MP_TEST` | solo para probar | `1` = usa las cuentas de prueba de Mercado Pago (sandbox). |
@@ -246,8 +254,8 @@ Antes de subir: tests en verde. Después: abrí la landing y `/super` para confi
 
 ## Pendientes
 
-- [ ] Poner el WhatsApp y el mail reales en la landing (`home.html`, marcados con `TODO`).
+- [ ] Poner el WhatsApp y el mail reales en la landing (`views/landing/index.html`, marcados con `TODO`).
 - [ ] Inicializar git y subir el repo (hoy el proyecto no tiene historial de versiones).
-- [ ] Separar el JavaScript de `admin.html` en módulos.
+- [x] Separar el JavaScript del admin en módulos (`views/admin/js/`).
 - [ ] Backups periódicos del volumen de Railway.
 - [x] Cobro con Mercado Pago, con comisión por venta (falta crear la app y probarlo con cuentas de prueba).

@@ -4,7 +4,7 @@ const num = n => Number(n).toLocaleString("es-AR");
 
 // multitenant por ruta: la página /{slug} y /{slug}/admin hablan con /api/t/{slug}/...
 const TENANT = location.pathname.split("/")[1];
-const apiUrl = url => url.startsWith("/api/super/") ? url : url.replace(/^\/api\//, `/api/t/${TENANT}/`);
+const apiUrl = url => /^\/api\/(super|cuenta)(\/|$)/.test(url) ? url : url.replace(/^\/api\//, `/api/t/${TENANT}/`);
 
 // fetch que devuelve JSON o tira Error con el mensaje del backend
 async function api(url, { method = "GET", body } = {}) {

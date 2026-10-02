@@ -30,7 +30,7 @@ def test_payments_survive_tenant_deletion(boss, shop, client, mp):  # noqa: F811
     calls, replies = mp
     upload(admin, slug, xlsx(*CATALOG), CATALOG_MAP)
     connect(slug)
-    admin.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True})
+    boss.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True})
     replies["/checkout/preferences"] = {"init_point": "https://mp/pagar"}
     order = admin.post(f"/api/t/{slug}/pagar", json={"ids": [2]}).json()["order"]
     replies["/v1/payments/900"] = {"id": 900, "status": "approved", "external_reference": f"{slug}:{order}", "transaction_amount": 68000,

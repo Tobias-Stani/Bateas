@@ -17,9 +17,15 @@ def callback_url(request):
 
 
 # --- admin ---
+# ponytail: por ahora solo el super admin conecta y prende los pagos online; abrirlo a las disquerías = sacar este Depends
+def super_only(who: str = Depends(actor)):
+    if who != "super":
+        raise HTTPException(403, "Los pagos online todavía no están habilitados. Muy pronto.")
+    return who
+
 
 @router.post(f"{ADMIN}/mercadopago/connect")
-def connect(request: Request, t: dict = Depends(require_admin), who: str = Depends(actor)):
+def connect(request: Request, t: dict = Depends(require_admin), who: str = Depends(super_only)):
     if not mercadopago.enabled():
         raise HTTPException(400, "Los pagos con Mercado Pago no están configurados en el servidor.")
     if mercadopago.direct():
@@ -46,14 +52,14 @@ def callback(request: Request, state: str = "", code: str = "", error: str = "")
 
 
 @router.delete(f"{ADMIN}/mercadopago")
-def disconnect(t: dict = Depends(require_admin), who: str = Depends(actor)):
+def disconnect(t: dict = Depends(require_admin), who: str = Depends(super_only)):
     mercadopago.disconnect(t)
     audit.log(t["slug"], who, "mp_disconnected")
     return mercadopago.status(t)
 
 
 @router.put(f"{ADMIN}/mercadopago/payments")
-def toggle_payments(body: Toggle, t: dict = Depends(require_admin), who: str = Depends(actor)):
+def toggle_payments(body: Toggle, t: dict = Depends(require_admin), who: str = Depends(super_only)):
     mercadopago.set_payments(t, body.value)
     audit.log(t["slug"], who, "mp_payments", value=body.value)
     return mercadopago.status(t)

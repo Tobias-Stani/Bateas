@@ -5,8 +5,10 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 
 from ..config import DEFAULT_ACCENT, DEFAULT_HIGHLIGHT, DEFAULT_LOGO, MESSAGE, MESSAGE_LINE
-from ..db import get_setting, registry, set_settings
-from . import catalog, mercadopago
+from ..db import get_setting, now, registry, set_settings
+from ..security import hash_password
+from ..storage import remove_tenant_storage
+from . import accounts, catalog, mercadopago, plans
 
 
 def find(slug):
@@ -34,6 +36,17 @@ def update_registry(sql, params):
     with registry() as con:
         con.execute(sql, params)
     con.close()
+
+
+def create(name, slug, password, client_code, whatsapp="", owner_id=None, public=False):
+    """Alta de una disquería: arranca activa y en plan Gratis. Los datos ya vienen validados."""
+    if find(slug):
+        raise HTTPException(409, f"Ya existe una disquería en /{slug}. Elegí otra dirección.")
+    remove_tenant_storage(slug)  # restos de una disquería eliminada con el mismo slug
+    set_settings({"slug": slug}, client_code=client_code, whatsapp=whatsapp, code_required="0" if public else "1")
+    update_registry("INSERT INTO tenants (slug, name, admin_hash, owner_id, created_at, status_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (slug, name, hash_password(password), owner_id, now(), now()))
+    return find(slug)
 
 
 # --- configuración de la disquería (en su settings) ---
@@ -96,5 +109,6 @@ def super_view(t):
     view.update(client_code=client_code(t), code_required=code_required(t), whatsapp=whatsapp(t), total=catalog.total(t),
                 uploaded_at=get_setting(t, "uploaded_at") or None, closes_at=closes_at(t), closed=is_closed(t),
                 filename=get_setting(t, "filename") or None, mp_connected=mercadopago.connected(t),
-                payments=mercadopago.payments_on(t), discogs_user=get_setting(t, "discogs_user", ""))
+                payments=mercadopago.payments_on(t), discogs_user=get_setting(t, "discogs_user", ""),
+                plan_now=plans.plan(t), owner_email=(accounts.find(t["owner_id"]) or {}).get("email") if t.get("owner_id") else None)  # plan = lo asignado; plan_now = lo vigente (un Premium vencido ya es Gratis)
     return view

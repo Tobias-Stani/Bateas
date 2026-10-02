@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tu cuenta · Bateas</title>
+<link rel="icon" href="/assets/img/bateas.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<link rel="stylesheet" href="/views/cuenta/cuenta.css">
+</head>
+<body>
+
+<header class="top"><a class="brand" href="/"><img src="/assets/img/bateas.svg" alt=""><span>bateas</span></a></header>
+
+<main>
+  <!-- sin sesión -->
+  <section id="signed-out" class="card" hidden>
+    <h1>Tu disquería online, gratis.</h1>
+    <p class="lead">Entrá con tu cuenta de Google y creá tu tienda en un minuto. Sin contraseñas nuevas.</p>
+    <div id="google-button" aria-live="polite"></div>
+    <p id="google-error" class="error" role="alert"></p>
+    <p class="hint">Solo usamos tu nombre y tu mail para identificarte. Nunca publicamos nada en tu nombre.</p>
+  </section>
+
+  <!-- con sesión, sin tienda -->
+  <section id="new-store" class="card" hidden>
+    <div class="who"><img data-me-picture alt=""><div><b data-me-name></b><span class="hint" data-me-email></span></div></div>
+    <h1>Creá tu tienda</h1>
+    <form id="store-form" novalidate>
+      <label for="s-name">Nombre de la disquería</label>
+      <input id="s-name" class="field" maxlength="80" autocomplete="organization" placeholder="Disquería El Surco" required>
+      <label for="s-slug">Tu dirección</label>
+      <div class="prefix"><span id="s-origin"></span><input id="s-slug" class="field" maxlength="40" autocomplete="off" spellcheck="false" placeholder="el-surco" required aria-describedby="s-slug-hint"></div>
+      <p id="s-slug-hint" class="hint" style="margin-top:6px">Es el link que vas a compartir con tus clientes. Letras, números y guiones.</p>
+      <p id="store-error" class="error" role="alert"></p>
+      <button class="btn">Crear mi tienda</button>
+    </form>
+    <p class="plan-note">Arranca en el plan <b>Gratis</b>: hasta 50 discos, 1 banner y 1 sección. Cuando quieras, pasate a <b>Premium</b> y no tenés límites.</p>
+    <button class="logout" data-logout>Salir</button>
+  </section>
+
+  <!-- con sesión y tienda -->
+  <section id="my-stores" class="card" hidden>
+    <div class="who"><img data-me-picture alt=""><div><b data-me-name></b><span class="hint" data-me-email></span></div></div>
+    <h1>Tu tienda</h1>
+    <div id="stores"></div>
+    <button class="logout" data-logout>Salir</button>
+  </section>
+
+  <section id="loading" class="card"><p class="hint">Cargando…</p></section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script src="/views/cuenta/cuenta.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Administración – Tienda de discos</title>
+<link rel="icon" href="/assets/img/logo.svg">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/views/admin/admin.css">
+</head>
+<body>
+
+<!-- ingreso admin -->
+<section id="gate" class="gate" hidden>
+  <div class="gate-box">
+    <img class="logo" src="/assets/img/logo.svg" alt="Tienda de música" data-brand-logo>
+    <h1>Administración</h1>
+    <p class="lead">Cargá el catálogo del mes y manejá el código de acceso de los clientes.</p>
+    <form id="login" novalidate>
+      <label for="password">Contraseña de administrador</label>
+      <input id="password" class="field" type="password" autocomplete="current-password" required aria-describedby="login-error">
+      <p id="login-error" class="error" role="alert"></p>
+      <button class="btn">Entrar</button>
+    </form>
+    <p class="lead" style="margin-top:18px;font-size:0.95rem">¿Creaste tu tienda con Google? <a href="/cuenta" style="color:inherit;font-weight:700">Entrá con tu cuenta</a>.</p>
+  </div>
+</section>
+
+<!-- panel -->
+<div id="panel" hidden>
+  <header class="topbar">
+    <a class="brand" data-link="/admin"><img src="/assets/img/logo.svg" alt="" data-brand-logo><span data-brand></span></a>
+    <span class="hint" style="color:#b9bdc4">Administración</span>
+    <span class="spacer"></span>
+    <a class="btn btn-outline btn-sm" data-link="" target="_blank" rel="noopener">Ver tienda</a>
+    <button id="logout" class="btn btn-outline btn-sm">Salir</button>
+  </header>
+
+  <main class="page">
+    <section id="plan-bar" class="plan-bar" aria-live="polite" hidden></section>
+    <div class="grid">
+      <!-- izquierda: catálogo y acceso; derecha: cómo llegan los pedidos -->
+      <div class="stack">
+      <section class="panel" aria-labelledby="h-catalog">
+        <h2 id="h-catalog">Catálogo</h2>
+        <p class="hint">Subí el Excel que manda la disquería. Reemplaza la lista anterior completa.</p>
+
+        <div id="summary" class="summary" aria-live="polite"></div>
+        <div id="bars" class="bars"></div>
+
+        <form id="upload">
+          <input id="file" type="file" accept=".xlsx" hidden>
+          <div id="drop" class="drop" role="button" tabindex="0" aria-describedby="drop-hint">
+            <b id="drop-title">Arrastrá el Excel acá</b>
+            <span id="drop-hint" class="hint">o hacé clic para elegirlo. Solo archivos .xlsx.</span>
+          </div>
+          <div id="mapping" class="mapping" hidden>
+            <b>Revisá las columnas</b>
+            <p id="mapping-hint" class="hint"></p>
+            <div class="map-table">
+              <table>
+                <thead><tr><th>Columna del Excel</th><th>Se usa como</th><th>Ejemplos</th></tr></thead>
+                <tbody id="mapping-rows"></tbody>
+              </table>
+            </div>
+            <p id="mapping-error" class="error" role="alert"></p>
+          </div>
+          <div class="upload-actions">
+            <button id="upload-btn" class="btn" disabled>Cargar catálogo</button>
+            <button id="reset-file" type="button" class="btn-text" hidden>Elegir otro archivo</button>
+            <button id="delete-catalog" type="button" class="btn-text danger" style="margin-left:auto" hidden>Eliminar catálogo</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="discogs-panel" class="panel" aria-labelledby="h-discogs" hidden>
+        <h2 id="h-discogs">Discogs</h2>
+        <p class="hint">Conectá tu cuenta de Discogs e importá los discos que tenés a la venta. Reemplaza el catálogo actual, igual que un Excel.</p>
+        <p id="discogs-state" class="state" aria-live="polite"></p>
+        <div class="upload-actions">
+          <button id="discogs-connect" class="btn">Conectar con Discogs</button>
+          <button id="discogs-import" class="btn">Importar inventario</button>
+          <button id="discogs-disconnect" type="button" class="btn-text" style="margin-left:auto">Desconectar</button>
+        </div>
+        <p class="hint" style="margin-top:12px">Datos provistos por <a href="https://www.discogs.com" target="_blank" rel="noopener">Discogs</a>.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-close">
+        <h2 id="h-close">Cierre de la lista</h2>
+        <p class="hint">Después de esta fecha los clientes no pueden entrar a la tienda. Vos sí.</p>
+        <p id="close-status" class="state" aria-live="polite"></p>
+        <form id="close-form" class="code-form" novalidate>
+          <label for="close-at" style="width:100%;margin:0">Fecha y hora de cierre</label>
+          <input id="close-at" class="field" type="datetime-local" aria-describedby="close-error">
+          <button class="btn">Guardar cierre</button>
+          <p id="close-error" class="error" role="alert" style="width:100%;margin:0"></p>
+        </form>
+        <button id="clear-close" class="btn-text" hidden>Quitar fecha de cierre</button>
+      </section>
+
+      <section class="panel" aria-labelledby="h-code">
+        <h2 id="h-code">Código de acceso</h2>
+        <p class="hint">Es el código que usan los clientes para entrar a la tienda.</p>
+        <div class="toggle-row">
+          <label for="code-required">Pedir código para entrar<small id="code-required-hint"></small></label>
+          <input id="code-required" class="ios-switch" type="checkbox" role="switch">
+        </div>
+        <p id="public-note" class="public-note" hidden>La tienda es pública: cualquiera con el link entra directo.</p>
+        <div id="code-box">
+        <div class="code-now">
+          <span>Código actual</span>
+          <span id="code-now" class="sticker"></span>
+          <button id="copy-code" class="btn-text">Copiar</button>
+        </div>
+        <form id="code-form" class="code-form" novalidate>
+          <label for="new-code" style="width:100%;margin:0">Nuevo código</label>
+          <input id="new-code" class="field" minlength="4" maxlength="64" autocomplete="off" aria-describedby="code-error code-hint">
+          <button class="btn">Cambiar código</button>
+          <p id="code-hint" class="hint" style="width:100%">Mínimo 4 caracteres. Los clientes que ya entraron van a tener que ingresar el nuevo.</p>
+          <p id="code-error" class="error" role="alert" style="width:100%;margin:0"></p>
+        </form>
+        </div>
+      </section>
+      </div>
+
+      <div class="stack">
+      <section class="panel" aria-labelledby="h-wa">
+        <h2 id="h-wa">WhatsApp de pedidos</h2>
+        <p class="hint">A este número llegan los pedidos que arman los clientes.</p>
+        <div class="code-now">
+          <span>Número actual</span>
+          <span id="wa-now" class="sticker"></span>
+        </div>
+        <form id="wa-form" class="code-form" novalidate>
+          <label for="new-wa" style="width:100%;margin:0">Nuevo número</label>
+          <input id="new-wa" class="field" type="tel" inputmode="tel" autocomplete="off" placeholder="54 9 11 1234 5678" aria-describedby="wa-error wa-hint">
+          <button class="btn">Guardar número</button>
+          <p id="wa-hint" class="hint" style="width:100%">Con código de país y de área, sin el 0 ni el 15. Para Argentina: 54 9 + área + número.</p>
+          <p id="wa-error" class="error" role="alert" style="width:100%;margin:0"></p>
+        </form>
+      </section>
+
+      <section id="mp-panel" class="panel" aria-labelledby="h-mp" hidden>
+        <h2 id="h-mp">Pagos online</h2>
+        <p id="mp-hint" class="hint"></p>
+        <p id="mp-state" class="state" aria-live="polite"></p>
+        <div id="mp-toggle" class="toggle-row" hidden>
+          <label for="mp-payments">Cobrar online<small>Si está apagado, los pedidos siguen llegando por WhatsApp.</small></label>
+          <input id="mp-payments" class="ios-switch" type="checkbox" role="switch">
+        </div>
+        <div class="upload-actions">
+          <button id="mp-connect" class="btn">Conectar Mercado Pago</button>
+          <button id="mp-disconnect" type="button" class="btn-text" style="margin-left:auto">Desconectar</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-contact">
+        <h2 id="h-contact">Datos de contacto</h2>
+        <p class="hint">Se muestran al pie de la tienda. Todo es opcional: lo que dejes vacío no aparece.</p>
+        <form id="contact-form" class="contact-form" novalidate>
+          <div class="wide"><label for="c-address">Dirección</label><input id="c-address" name="address" class="field" maxlength="150" autocomplete="street-address" placeholder="Av. Corrientes 1234, local 5"></div>
+          <div><label for="c-city">Localidad</label><input id="c-city" name="city" class="field" maxlength="80" placeholder="CABA"></div>
+          <div><label for="c-phone">Teléfono</label><input id="c-phone" name="phone" class="field" type="tel" maxlength="40" placeholder="11 4567-8901"></div>
+          <div><label for="c-email">Mail</label><input id="c-email" name="email" class="field" type="email" maxlength="120" placeholder="hola@tudisqueria.com"></div>
+          <div><label for="c-instagram">Instagram</label><input id="c-instagram" name="instagram" class="field" maxlength="100" placeholder="@tudisqueria"></div>
+          <div class="wide"><label for="c-hours">Horarios</label><input id="c-hours" name="hours" class="field" maxlength="150" placeholder="Lunes a sábado de 11 a 20"></div>
+          <p id="contact-error" class="error wide" role="alert"></p>
+          <div class="wide"><button class="btn">Guardar contacto</button></div>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="h-msg">
+        <h2 id="h-msg">Mensaje del pedido</h2>
+        <p class="hint">Es el texto que se abre en WhatsApp cuando el cliente consulta. Podés usar emojis, saltos de línea y el formato de WhatsApp: *negrita*, _cursiva_.</p>
+        <form id="msg-form" class="msg" novalidate>
+          <div>
+            <label for="msg-template">Mensaje</label>
+            <textarea id="msg-template" class="field" rows="4" maxlength="2000" aria-describedby="msg-error"></textarea>
+            <div class="vars" data-target="msg-template" aria-label="Insertar variable en el mensaje">
+              <button type="button" data-var="discos">lista de discos</button>
+              <button type="button" data-var="cantidad">cantidad</button>
+              <button type="button" data-var="tienda">nombre de la tienda</button>
+            </div>
+            <label for="msg-line">Línea por cada disco</label>
+            <textarea id="msg-line" class="field" rows="2" maxlength="300" aria-describedby="msg-error"></textarea>
+            <div class="vars" data-target="msg-line" aria-label="Insertar dato del disco">
+              <button type="button" data-var="id">número</button>
+              <button type="button" data-var="artist">artista</button>
+              <button type="button" data-var="title">título</button>
+              <button type="button" data-var="label">sello</button>
+              <button type="button" data-var="media">formato</button>
+              <button type="button" data-var="description">descripción</button>
+              <button type="button" data-var="genre">género</button>
+              <button type="button" data-var="price">precio</button>
+              <button type="button" data-var="origin">origen</button>
+              <button type="button" data-var="barcode">código de barras</button>
+              <span id="own-vars" style="display:contents"></span>
+            </div>
+            <p id="msg-error" class="error" role="alert"></p>
+            <div class="msg-actions">
+              <button class="btn">Guardar mensaje</button>
+              <button id="msg-reset" type="button" class="btn-text">Volver al mensaje original</button>
+            </div>
+          </div>
+          <div>
+            <label>Vista previa</label>
+            <div class="preview"><div id="msg-preview" class="bubble" aria-live="polite"></div></div>
+            <p class="hint" style="margin-top:8px">Con dos discos de ejemplo. Si un dato falta en el Excel, se quitan los paréntesis vacíos.</p>
+          </div>
+        </form>
+      </section>
+      </div>
+    </div>
+
+    <section id="orders-panel" class="panel" aria-labelledby="h-orders" style="margin-bottom:24px" hidden>
+      <h2 id="h-orders">Pedidos pagados</h2>
+      <p class="hint">Los pagos que entraron por Mercado Pago, del más nuevo al más viejo. Las comisiones son las que informa Mercado Pago en cada pago; lo que te queda ya está en tu cuenta.</p>
+      <p id="orders-sum" class="summary" style="margin-top:12px"></p>
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead><tr><th>Pedido</th><th>Fecha</th><th>Discos</th><th>Total</th><th>Comisión Mercado Pago</th><th>Comisión Bateas</th><th>Te queda</th><th>Estado</th><th>Pagó</th></tr></thead>
+          <tbody id="orders"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-home" style="margin-bottom:24px">
+      <h2 id="h-home">Portada de la tienda</h2>
+      <p class="hint">Así arranca la tienda cuando entra un cliente. Ordená los bloques y elegí cuáles se ven. Cuando el cliente busca, queda solo el catálogo.</p>
+      <div class="home-grid">
+        <div>
+          <h3>Orden de la portada</h3>
+          <ul id="blocks" class="blocks"></ul>
+        </div>
+        <div>
+          <h3>Bloques de banners</h3>
+          <p class="hint">Cada bloque es un banner en su lugar de la portada; si tiene varias imágenes, rotan. Ideal: horizontales, 1920 × 640 px. Las achicamos solas antes de subirlas.</p>
+          <div id="group-bar" class="group-bar"></div>
+          <div id="group-editor"></div>
+          <input id="banner-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-sections" style="margin-bottom:24px">
+      <h2 id="h-sections">Secciones de la tienda</h2>
+      <p class="hint">Armá carruseles como "Más vendidos" o "Recomendados de la casa". Dónde aparece cada uno se elige en <b>Portada de la tienda</b>. Si un disco no viene en el Excel del mes, se oculta solo y vuelve cuando reaparece.</p>
+      <div class="sections">
+        <div>
+          <ul id="sec-list" class="sec-list"></ul>
+          <button id="sec-new" class="btn btn-outline btn-sm" style="width:100%">+ Nueva sección</button>
+        </div>
+        <div id="sec-editor"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-content">
+      <h2 id="h-content">Lo que está cargado</h2>
+      <p class="hint">Así ven los clientes cada disco. El número es la fila del Excel.</p>
+      <div class="table-tools">
+        <input id="q" class="field" type="search" placeholder="Buscar artista, título o sello" aria-label="Buscar en el catálogo">
+        <select id="media" class="field" aria-label="Formato"><option value="">Todos los formatos</option></select>
+        <span id="table-status" class="hint" aria-live="polite"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="table-head"></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <nav class="pager" aria-label="Páginas">
+        <button id="prev" class="btn btn-outline btn-sm">Anterior</button>
+        <span id="pageinfo" class="hint"></span>
+        <button id="next" class="btn btn-outline btn-sm">Siguiente</button>
+      </nav>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script src="/assets/js/brand.js"></script>
+<script src="/views/admin/js/panel.js"></script>
+<script src="/views/admin/js/ingreso.js"></script>
+<script src="/views/admin/js/catalogo.js"></script>
+<script src="/views/admin/js/configuracion.js"></script>
+<script src="/views/admin/js/discogs.js"></script>
+<script src="/views/admin/js/plan.js"></script>
+<script src="/views/admin/js/mercadopago.js"></script>
+<script src="/views/admin/js/contacto.js"></script>
+<script src="/views/admin/js/mensaje.js"></script>
+<script src="/views/admin/js/secciones.js"></script>
+<script src="/views/admin/js/portada.js"></script>
+<script src="/views/admin/js/inicio.js"></script>
+</body>
+</html>

@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from .. import validators
 from ..config import MESSAGE, MESSAGE_LINE
 from ..db import get_setting, set_settings
-from ..dependencies import actor, require_admin, tenant
+from ..dependencies import actor, current_account, require_admin, tenant
 from ..schemas import Contact, Message, Secret, Toggle
 from ..security import admin_token, check_password, clear_tenant_cookie, set_tenant_cookie
-from ..services import audit, catalog, discogs, mercadopago, tenants
+from ..services import audit, catalog, discogs, mercadopago, plans, tenants
 
 router = APIRouter(prefix="/api/t/{slug}/admin", tags=["admin"])
 
@@ -29,12 +29,19 @@ def logout(response: Response, slug: str):
 
 
 @router.get("/status")
-def status(t: dict = Depends(require_admin)):
+def status(t: dict = Depends(require_admin), who: str = Depends(actor)):
     return {"client_code": tenants.client_code(t), "code_required": tenants.code_required(t), "whatsapp": tenants.whatsapp(t),
             **tenants.messages(t), "custom_columns": tenants.custom_columns(t), "contact": tenants.contact(t),
             "filename": get_setting(t, "filename"), "uploaded_at": get_setting(t, "uploaded_at"),
             "closes_at": tenants.closes_at(t), "closed": tenants.is_closed(t), "discogs": discogs.status(t),
-            "mercadopago": mercadopago.status(t), **catalog.stats(t)}
+            "mercadopago": {**mercadopago.status(t), "allowed": who == "super"}, "plan": plans.view(t), **catalog.stats(t)}
+
+
+@router.post("/premium")
+def ask_premium(t: dict = Depends(require_admin), who: str = Depends(actor), acc: dict | None = Depends(current_account)):
+    plans.request_premium(t)
+    audit.log(t["slug"], who, "premium_requested", email=(acc or {}).get("email"), usage=plans.usage(t))
+    return plans.view(tenants.find(t["slug"]))
 
 
 @router.put("/code")

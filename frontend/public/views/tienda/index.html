@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tienda de discos</title>
+<link rel="icon" href="/assets/img/logo.svg">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/views/tienda/tienda.css">
+</head>
+<body>
+
+<!-- ingreso -->
+<section id="gate" class="gate" hidden>
+  <div class="gate-box">
+    <img class="logo" src="/assets/img/logo.svg" alt="Tienda de música" data-brand-logo>
+    <h1 id="gate-title">Los discos que llegan este mes</h1>
+    <p id="gate-lead" class="lead">Elegí los que querés y mandá el pedido por WhatsApp. Te respondemos con la cotización.</p>
+    <p id="deadline" class="deadline" hidden></p>
+    <form id="login" novalidate>
+      <label for="code">Código de acceso</label>
+      <input id="code" class="field" type="password" autocomplete="current-password" required aria-describedby="login-error">
+      <p id="login-error" class="error" role="alert"></p>
+      <button class="btn">Entrar a la tienda</button>
+    </form>
+    <section class="contact gate-contact" data-contact hidden aria-label="Contacto de la disquería"><dl></dl></section>
+  </div>
+</section>
+
+<!-- tienda -->
+<div id="store" hidden>
+  <header class="topbar">
+    <a class="brand" data-link=""><img src="/assets/img/logo.svg" alt="" data-brand-logo><span data-brand></span></a>
+    <div class="search">
+      <input id="q" class="field" type="search" placeholder="Buscar por artista, título o sello" aria-label="Buscar discos">
+      <kbd title="Atajo: tecla /">/</kbd>
+    </div>
+    <span class="spacer"></span>
+    <button id="logout" class="btn btn-outline btn-sm">Salir</button>
+  </header>
+
+  <main class="page">
+
+    <div class="layout">
+      <section>
+        <!-- portada armada por la disquería: banners, secciones y el catálogo en su orden -->
+        <div id="home"></div>
+        <div id="catalog">
+        <div class="filters">
+          <select id="media" class="field" aria-label="Formato"><option value="">Todos los formatos</option></select>
+          <select id="genre" class="field" aria-label="Género"><option value="">Todos los géneros</option></select>
+          <select id="per-page" class="field" aria-label="Discos por página">
+            <option value="10">10 por página</option><option value="15">15 por página</option><option value="20">20 por página</option>
+            <option value="25" selected>25 por página</option><option value="30">30 por página</option><option value="35">35 por página</option>
+            <option value="40">40 por página</option><option value="45">45 por página</option><option value="50">50 por página</option>
+          </select>
+          <button id="clear" class="btn-text" hidden>Quitar filtros</button>
+          <p id="status" class="hint" aria-live="polite"></p>
+        </div>
+        <div id="list" class="list"></div>
+        <nav class="pager" aria-label="Páginas">
+          <button id="prev" class="btn btn-outline btn-sm">Anterior</button>
+          <span id="pageinfo" class="hint"></span>
+          <button id="next" class="btn btn-outline btn-sm">Siguiente</button>
+        </nav>
+        </div>
+      </section>
+
+      <aside id="cart" class="panel cart" aria-label="Tu pedido">
+        <header>
+          <h2>Tu pedido</h2>
+          <span id="count" class="sticker">0</span>
+          <span class="spacer" style="flex:1"></span>
+          <button id="close-cart" class="btn-text cart-close" aria-label="Cerrar pedido">Cerrar</button>
+        </header>
+        <ul id="cart-items"></ul>
+        <p id="cart-empty" class="hint">Todavía no agregaste discos. Buscá lo que te interese y tocá <b>Agregar</b>.</p>
+        <div class="actions">
+          <button id="pay" class="btn btn-pay" hidden>Pagar con Mercado Pago</button>
+          <p id="pay-note" class="hint" hidden></p>
+          <button id="wa" class="btn btn-whatsapp">Consultar cotización</button>
+          <button id="copy" class="btn btn-outline">Copiar lista</button>
+          <button id="empty" class="btn-text danger">Vaciar pedido</button>
+        </div>
+        <p class="hint">Se abre WhatsApp con la lista escrita. La disquería te responde con la cotización.</p>
+        <p id="cart-deadline" class="hint" hidden></p>
+      </aside>
+    </div>
+
+    <section class="panel contact store-contact" data-contact hidden aria-labelledby="h-contact">
+      <h2 id="h-contact">Contacto</h2>
+      <dl></dl>
+    </section>
+  </main>
+
+  <button id="cart-bar" class="btn cart-bar">Ver pedido <span id="count-bar" class="sticker">0</span></button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="/assets/js/common.js"></script>
+<script src="/assets/js/brand.js"></script>
+<script src="/assets/js/covers.js"></script>
+<script src="/assets/js/player.js"></script>
+<script src="/views/tienda/tienda.js"></script>
+</body>
+</html>

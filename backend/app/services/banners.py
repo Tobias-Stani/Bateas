@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from ..config import MAX_BANNER_GROUPS, MAX_BANNERS
 from ..db import db, get_setting, set_settings
-from . import images
+from . import images, plans
 
 
 def ensure_tables(t, con):
@@ -115,6 +115,11 @@ def create(t, group_id, upload):
     if con.execute("SELECT COUNT(*) FROM banners WHERE group_id = ?", (group_id,)).fetchone()[0] >= MAX_BANNERS:
         con.close()
         raise HTTPException(400, f"Un bloque puede tener hasta {MAX_BANNERS} imágenes.")
+    try:
+        plans.check(t, "banners", con.execute("SELECT COUNT(*) FROM banners").fetchone()[0])
+    except HTTPException:
+        con.close()
+        raise
     name = images.save(t, upload)
     with con:
         cur = con.execute("""INSERT INTO banners (position, image, group_id)

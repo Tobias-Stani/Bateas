@@ -7,7 +7,7 @@ from ..config import FIELDS
 from ..db import get_setting, now, set_settings
 from ..dependencies import actor, require_admin
 from ..schemas import ImportPlan
-from ..services import audit, catalog, sections
+from ..services import audit, catalog, plans, sections
 from ..storage import pending_path
 
 router = APIRouter(prefix="/api/t/{slug}/admin", tags=["catálogo"])
@@ -37,6 +37,7 @@ def confirm(body: ImportPlan, t: dict = Depends(require_admin), who: str = Depen
         raise HTTPException(400, "Hay dos columnas propias con el mismo nombre. Renombralas en el Excel o dejá una sola.")
     if not rows:
         raise HTTPException(400, "El Excel no tiene discos debajo de los encabezados. Revisá que sea la lista correcta.")
+    plans.check(t, "discs", 0, len(rows))  # reemplaza el catálogo entero: cuenta la lista nueva
     catalog.save(t, rows)
     # se recuerda por nombre de encabezado: el Excel del mes que viene sale directo
     names = {c["index"]: catalog.norm(c["header"]) for c in catalog.detect(path, {})["columns"]}

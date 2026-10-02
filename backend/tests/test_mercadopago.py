@@ -27,37 +27,37 @@ def connect(slug, expires_in=timedelta(days=100)):
     set_settings(tenants.find(slug), mp_token="seller-token", mp_refresh="refresh", mp_expires=when)
 
 
-def test_without_server_app_nothing_is_offered(shop, client):
+def test_without_server_app_nothing_is_offered(shop, boss, client):
     slug, admin = shop
     assert client.get(f"/api/t/{slug}/brand").json()["payments"] is False
-    assert admin.post(f"/api/t/{slug}/admin/mercadopago/connect").status_code == 400
+    assert boss.post(f"/api/t/{slug}/admin/mercadopago/connect").status_code == 400
     assert admin.post(f"/api/t/{slug}/pagar", json={"ids": [2]}).status_code == 400
 
 
-def test_connect_uses_pkce_and_state(shop, mp):
+def test_connect_uses_pkce_and_state(shop, boss, mp):
     slug, admin = shop
     calls, replies = mp
-    url = admin.post(f"/api/t/{slug}/admin/mercadopago/connect").json()["url"]
+    url = boss.post(f"/api/t/{slug}/admin/mercadopago/connect").json()["url"]
     q = parse_qs(urlparse(url).query)
     assert q["client_id"] == ["app-id"] and q["code_challenge_method"] == ["S256"] and q["state"][0].startswith(f"{slug}.")
     assert q["redirect_uri"] == ["http://testserver/api/mercadopago/callback"]
-    bad = admin.get("/api/mercadopago/callback", params={"state": f"{slug}.otro", "code": "c"}, follow_redirects=False)
+    bad = boss.get("/api/mercadopago/callback", params={"state": f"{slug}.otro", "code": "c"}, follow_redirects=False)
     assert bad.headers["location"].startswith(f"/{slug}/admin?mp=error")
     replies["/oauth/token"] = {"access_token": "seller-token", "refresh_token": "r", "user_id": 42, "expires_in": 15552000}
-    ok = admin.get("/api/mercadopago/callback", params={"state": q["state"][0], "code": "c"}, follow_redirects=False)
+    ok = boss.get("/api/mercadopago/callback", params={"state": q["state"][0], "code": "c"}, follow_redirects=False)
     assert ok.headers["location"] == f"/{slug}/admin?mp=ok"
     body = calls[-1][3]
     assert body["grant_type"] == "authorization_code" and len(body["code_verifier"]) >= 43
     assert admin.get(f"/api/t/{slug}/admin/status").json()["mercadopago"]["connected"] is True
 
 
-def test_checkout_uses_catalog_prices_and_fee(shop, client, mp):
+def test_checkout_uses_catalog_prices_and_fee(shop, boss, client, mp):
     slug, admin = shop
     calls, replies = mp
     upload(admin, slug, xlsx(*CATALOG), CATALOG_MAP)
-    assert admin.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True}).status_code == 400  # sin cuenta
+    assert boss.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True}).status_code == 400  # sin cuenta
     connect(slug)
-    assert admin.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True}).json()["payments"] is True
+    assert boss.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True}).json()["payments"] is True
     assert client.get(f"/api/t/{slug}/brand").json()["payments"] is True
 
     assert admin.post(f"/api/t/{slug}/pagar", json={"ids": [2, 3]}).status_code == 400  # #3 no tiene precio
@@ -90,14 +90,14 @@ def test_checkout_uses_catalog_prices_and_fee(shop, client, mp):
     assert client.post("/api/mercadopago/webhook?slug=no-existe", json={"type": "merchant_order"}).status_code == 200
 
 
-def test_direct_token_mode_for_development(shop, mp, monkeypatch):
+def test_direct_token_mode_for_development(shop, boss, mp, monkeypatch):
     slug, admin = shop
     calls, replies = mp
     monkeypatch.setattr(mercadopago, "MP_CLIENT_SECRET", "")  # sin la app OAuth
     monkeypatch.setattr(mercadopago, "MP_ACCESS_TOKEN", "TEST-token")
     upload(admin, slug, xlsx(*CATALOG), CATALOG_MAP)
-    assert admin.post(f"/api/t/{slug}/admin/mercadopago/connect").json()["url"] == f"/{slug}/admin?mp=ok"
-    assert admin.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True}).json()["fee_percent"] == 0
+    assert boss.post(f"/api/t/{slug}/admin/mercadopago/connect").json()["url"] == f"/{slug}/admin?mp=ok"
+    assert boss.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True}).json()["fee_percent"] == 0
     replies["/checkout/preferences"] = {"init_point": "https://mp/pagar"}
     admin.post(f"/api/t/{slug}/pagar", json={"ids": [2]})
     _, _, token, pref = calls[-1]
@@ -109,7 +109,7 @@ def test_lost_notification_is_recovered_and_other_stores_payments_ignored(shop, 
     calls, replies = mp
     upload(admin, slug, xlsx(*CATALOG), CATALOG_MAP)
     connect(slug)
-    admin.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True})
+    boss.put(f"/api/t/{slug}/admin/mercadopago/payments", json={"value": True})
     replies["/checkout/preferences"] = {"init_point": "https://mp/pagar"}
     order = admin.post(f"/api/t/{slug}/pagar", json={"ids": [2]}).json()["order"]
     # un pago de OTRA disquería con el mismo número de pedido: no se toca

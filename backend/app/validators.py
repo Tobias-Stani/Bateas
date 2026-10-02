@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException
 
-from .config import COLOR, RESERVED, SLUG
+from .config import COLOR, PLANS, RESERVED, SLUG
 
 
 def fail(message):
@@ -61,7 +61,7 @@ def logo(value):
     clean = value.strip()
     local = clean.startswith("/") and not clean.startswith("//")  # "//host/x" es otro sitio, no una ruta
     if clean and not ((local or clean.startswith("https://")) and len(clean) <= 500):
-        fail("El logo tiene que ser una ruta (/logo.svg) o una URL https.")
+        fail("El logo tiene que ser una ruta (/assets/img/logo.svg) o una URL https.")
     return clean or None  # vacío = logo por defecto
 
 
@@ -112,3 +112,14 @@ def message(template, line):
     if len(template) > 2000 or len(line) > 300:
         fail("El mensaje es demasiado largo.")
     return template, line
+
+
+def plan(value):
+    if value not in PLANS:
+        fail("El plan tiene que ser Gratis o Premium.")
+    return value
+
+
+def premium_until(value):
+    # vacío = Premium sin vencimiento; si no, fecha ISO con zona (el navegador manda UTC)
+    return closing_date(value) or None

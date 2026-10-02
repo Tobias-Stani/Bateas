@@ -1,5 +1,5 @@
 // marca blanca: nombre, logo, colores, WhatsApp y mensaje de cada disquería vienen de /api/t/{slug}/brand
-const BRAND = { name: "", logo: "/logo.svg", whatsapp: "", accent: "", highlight: "", message: "{discos}", message_line: "#{id} - {artist} – {title}", custom_columns: [], contact: {} };
+const BRAND = { name: "", logo: "/assets/img/logo.svg", whatsapp: "", accent: "", highlight: "", message: "{discos}", message_line: "#{id} - {artist} – {title}", custom_columns: [], contact: {} };
 
 // datos de contacto en cada <section data-contact> de la página; si la disquería no cargó nada, queda oculta
 function renderBrandContact() {
@@ -23,7 +23,7 @@ document.querySelectorAll("a[data-link]").forEach(a => { a.href = `/${TENANT}${a
 function blockPage(message) {
   document.title = "Tienda no disponible";
   document.body.innerHTML = `<section class="gate"><div class="gate-box">
-    <img class="logo" src="/logo.svg" alt=""><h1>Tienda no disponible</h1><p class="lead">${message}</p></div></section>`;
+    <img class="logo" src="/assets/img/logo.svg" alt=""><h1>Tienda no disponible</h1><p class="lead">${message}</p></div></section>`;
   return false;
 }
 

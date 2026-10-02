@@ -82,6 +82,8 @@ def stats():
         "events_day": con.execute("SELECT COUNT(*) FROM events WHERE at >= ?",
                                   ((datetime.now(timezone.utc) - timedelta(days=1)).isoformat(timespec="seconds"),)).fetchone()[0],
         "kinds": [r[0] for r in con.execute("SELECT DISTINCT kind FROM events ORDER BY kind")],
+        "premium_requests": [dict(r) for r in con.execute(
+            "SELECT slug, MAX(at) at FROM events WHERE kind = 'premium_requested' AND at >= ? GROUP BY slug ORDER BY at DESC", (month,))],
     }
     con.close()
     return res

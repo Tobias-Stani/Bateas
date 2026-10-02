@@ -41,7 +41,7 @@ async function openPlayer(id, artist, title) {
   const albumId = albums.get(id);
   if (!albumId) return;
   playing = -1; audio.pause();
-  $("player-cover").src = covers.get(id) || "/logo.svg";
+  $("player-cover").src = covers.get(id) || "/assets/img/logo.svg";
   $("player-title").textContent = title;
   $("player-artist").textContent = artist;
   $("player-yt").href = `https://www.youtube.com/results?search_query=${encodeURIComponent(cleanArtist(artist) + " " + cleanTitle(title))}`;

@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from ..config import DISCOGS_AGENT, DISCOGS_API, DISCOGS_AUTHORIZE, DISCOGS_KEY, DISCOGS_PAGE, DISCOGS_SECRET, FIELDS
 from ..db import get_setting, now, set_settings
 from ..security import same
-from . import audit, catalog, sections
+from . import audit, catalog, plans, sections
 
 # lo que trae Discogs y no tiene campo fijo: columnas propias, usables en el mensaje como {ano}, {estado}, {tapa}
 COLUMNS = [{"key": catalog.custom_key(n), "name": n} for n in ("Año", "Estado", "Tapa")]
@@ -137,6 +137,7 @@ def import_inventory(t):
             data = json.loads(_call("GET", f"{DISCOGS_API}/users/{quote(name)}/inventory?status=For%20Sale"
                                            f"&sort=artist&per_page={DISCOGS_PAGE}&page={page}", secret, oauth_token=token))
             pages = data["pagination"]["pages"]
+            plans.check(t, "discs", 0, data["pagination"]["items"])  # antes de bajar todo: el total viene en la primera página
             rows += [listing_row(len(rows) + i + 1, item) for i, item in enumerate(data["listings"])]
             _set_job(t, state="running", done=len(rows), total=data["pagination"]["items"])
             page += 1

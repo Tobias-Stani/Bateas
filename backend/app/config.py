@@ -21,6 +21,8 @@ MP_FEE_PERCENT = float(os.environ.get("MP_FEE_PERCENT", "0"))  # comisión de Ba
 MP_TEST = os.environ.get("MP_TEST", "") == "1"  # 1 = cuentas de prueba de Mercado Pago
 # solo desarrollo: un Access Token de prueba que usan todas las disquerías, sin OAuth (y sin comisión)
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+# "Continuar con Google" (Google Cloud → proyecto Bateas → Clientes); vacío = sin registro con Google
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 
 TENANTS.mkdir(parents=True, exist_ok=True)
 
@@ -29,12 +31,12 @@ MONTH = 60 * 60 * 24 * 30
 
 # --- disquerías ---
 SLUG = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])")
-RESERVED = {"api", "super", "admin", "static", "assets", "www", "t"}
+RESERVED = {"api", "super", "admin", "static", "assets", "www", "t", "cuenta", "registro", "entrar", "login", "views"}
 STATUSES = {"active", "suspended", "cancelled"}
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")
 
 # marca por defecto de cada disquería nueva; el super admin la cambia
-DEFAULT_LOGO, DEFAULT_ACCENT, DEFAULT_HIGHLIGHT = "/logo.svg", "#03a0c4", "#f8b318"
+DEFAULT_LOGO, DEFAULT_ACCENT, DEFAULT_HIGHLIGHT = "/assets/img/logo.svg", "#03a0c4", "#f8b318"
 
 # plantillas del mensaje de pedido; el admin de cada disquería las cambia
 MESSAGE = "Hola! Quiero cotizar estos discos:\n\n{discos}"
@@ -71,6 +73,14 @@ MP_API = "https://api.mercadopago.com"
 MP_AUTHORIZE = "https://auth.mercadopago.com/authorization"
 MP_CURRENCY = "ARS"  # solo se cobran online los discos con precio en pesos
 MAX_ORDER = 100  # discos por pago
+
+# --- cuentas ---
+STORES_PER_ACCOUNT = 1  # tiendas que puede crear cada cuenta por su cuenta (el super admin no tiene límite)
+
+# --- planes ---
+PLANS = {"free", "premium"}
+PREMIUM_PRICE = 11999  # por mes, en pesos: lo muestran la landing y el admin
+FREE_LIMITS = {"discs": 50, "banners": 1, "sections": 1}  # Premium: los máximos generales de abajo
 
 # --- portada ---
 MAX_SECTIONS, MAX_SECTION_ITEMS = 20, 60

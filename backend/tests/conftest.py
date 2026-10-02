@@ -14,7 +14,7 @@ os.environ["DATA_DIR"] = tempfile.mkdtemp(prefix="vinyl-tests-")
 os.environ["SUPER_PASSWORD"] = "s3cret"
 os.environ["STATIC_DIR"] = str(BACKEND.parent / "frontend" / "public")
 os.environ["DISCOGS_KEY"] = os.environ["DISCOGS_SECRET"] = ""  # los tests nunca hablan con Discogs
-for var in ("MP_CLIENT_ID", "MP_CLIENT_SECRET", "MP_ACCESS_TOKEN", "MP_TEST"):
+for var in ("GOOGLE_CLIENT_ID", "MP_CLIENT_ID", "MP_CLIENT_SECRET", "MP_ACCESS_TOKEN", "MP_TEST"):
     os.environ[var] = ""  # ni con Mercado Pago
 sys.path.insert(0, str(BACKEND))
 
@@ -46,6 +46,8 @@ def shop(boss):
     slug = f"tienda-{next(_counter)}"
     r = boss.post("/api/super/tenants", json={"name": "Tienda Test", "slug": slug, "admin_password": "pass123", "client_code": "codigo"})
     assert r.status_code == 200, r.text
+    # Premium: así los tests de secciones, banners y pagos no chocan con los límites (los de Gratis están en test_plans.py)
+    assert boss.patch(f"/api/super/tenants/{slug}", json={"plan": "premium"}).status_code == 200
     admin = TestClient(APP)
     assert admin.post(f"/api/t/{slug}/admin/login", json={"value": "pass123"}).status_code == 200
     return slug, admin

@@ -15,11 +15,21 @@ def test_pages_are_routed(client):
 
 
 def test_static_files_and_cache(client):
-    assert ":root" in client.get("/style.css").text
-    assert client.get("/logo.svg").text.startswith("<svg")
-    for path in ["/", "/una-tienda", "/super", "/common.js", "/style.css"]:
+    assert ":root" in client.get("/assets/css/base.css").text
+    assert client.get("/assets/img/logo.svg").text.startswith("<svg")
+    for path in ["/", "/una-tienda", "/super", "/cuenta", "/assets/js/common.js", "/assets/css/base.css", "/views/admin/js/panel.js"]:
         assert client.get(path).headers.get("cache-control") == "no-cache", path
-    assert "cache-control" not in client.get("/logo.svg").headers
+    assert "cache-control" not in client.get("/assets/img/logo.svg").headers
+    old = client.get("/logo.svg", follow_redirects=False)  # ruta de antes de assets/
+    assert old.status_code == 301 and old.headers["location"] == "/assets/img/logo.svg"
+
+
+def test_every_file_a_page_loads_exists(client):
+    # cada <script src> y <link href> local de cada pantalla responde: atrapa rutas rotas al mover archivos
+    import re
+    for page in ["/", "/cuenta", "/super", "/una-tienda", "/una-tienda/admin"]:
+        for ref in re.findall(r'(?:src|href)="(/(?:assets|views)/[^"]+)"', client.get(page).text):
+            assert client.get(ref).status_code == 200, (page, ref)
 
 
 # --- super admin ---
@@ -49,7 +59,7 @@ def test_update_tenant_brand(boss, shop, client):
     for good in ["/logo.svg", "https://x.com/a.png", ""]:
         assert boss.patch(f"/api/super/tenants/{slug}", json={"logo": good}).status_code == 200, good
     brand = client.get(f"/api/t/{slug}/brand").json()
-    assert brand["name"] == "Chopp & Rock" and brand["logo"] == "/logo.svg" and brand["status"] == "active"
+    assert brand["name"] == "Chopp & Rock" and brand["logo"] == "/assets/img/logo.svg" and brand["status"] == "active"
 
 
 def test_tenant_status_lifecycle(boss, shop, client):

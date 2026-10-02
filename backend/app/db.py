@@ -28,6 +28,17 @@ def init_registry():
             slug TEXT PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active',
             admin_hash TEXT NOT NULL, logo TEXT, accent TEXT, highlight TEXT, notes TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL, status_at TEXT NOT NULL)""")
+        # plan de cada disquería (services/plans.py); premium_until vacío = sin vencimiento
+        if "plan" not in {c[1] for c in con.execute("PRAGMA table_info(tenants)")}:
+            con.execute("ALTER TABLE tenants ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'")
+            con.execute("ALTER TABLE tenants ADD COLUMN premium_until TEXT")
+            con.execute("UPDATE tenants SET plan = 'premium'")  # las que ya existían (creadas a mano) no pierden nada
+        # cuentas de los dueños (inician sesión con Google) y de quién es cada disquería
+        con.execute("""CREATE TABLE IF NOT EXISTS accounts (id INTEGER PRIMARY KEY, google_sub TEXT NOT NULL UNIQUE, email TEXT NOT NULL,
+            name TEXT NOT NULL DEFAULT '', picture TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'active',
+            created_at TEXT NOT NULL, last_login_at TEXT NOT NULL)""")
+        if "owner_id" not in {c[1] for c in con.execute("PRAGMA table_info(tenants)")}:
+            con.execute("ALTER TABLE tenants ADD COLUMN owner_id INTEGER")
         # registro central (services/audit.py): no depende de ninguna disquería, así que sobrevive a que se elimine una
         con.execute("""CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, at TEXT NOT NULL, slug TEXT NOT NULL,
             actor TEXT NOT NULL, kind TEXT NOT NULL, detail TEXT NOT NULL)""")

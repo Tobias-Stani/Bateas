@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from ..config import MAX_SECTION_ITEMS, MAX_SECTIONS
 from ..db import db
-from . import banners, catalog, layout
+from . import banners, catalog, layout, plans
 
 
 def connect(t):
@@ -96,6 +96,11 @@ def create(t, name):
     if con.execute("SELECT COUNT(*) FROM sections").fetchone()[0] >= MAX_SECTIONS:
         con.close()
         raise HTTPException(400, f"Llegaste al máximo de {MAX_SECTIONS} secciones.")
+    try:
+        plans.check(t, "sections", con.execute("SELECT COUNT(*) FROM sections").fetchone()[0])
+    except HTTPException:
+        con.close()
+        raise
     with con:
         cur = con.execute("INSERT INTO sections (name, position) VALUES (?, (SELECT COALESCE(MAX(position), 0) + 1 FROM sections))", (name,))
     con.close()

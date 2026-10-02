@@ -19,6 +19,7 @@ services:
       MP_FEE_PERCENT: ${MP_FEE_PERCENT:-0}
       MP_TEST: ${MP_TEST:-}
       MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}  # solo desarrollo: sin OAuth ni comisión
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}  # "Continuar con Google"
     volumes:
       - ./backend:/app
       - data:/data
