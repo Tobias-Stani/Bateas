@@ -113,6 +113,38 @@
 .player footer a { color: var(--accent-dark); font-weight: 600; }
 
 .empty { padding: 48px 24px; text-align: center; }
+
+/* el disco del pedido y el artista/título de las tarjetas abren la ficha */
+.cart-disc { all: unset; cursor: pointer; display: block; border-radius: 6px; }
+.cart-disc:hover b, .cart-disc:focus-visible b { color: var(--accent-dark); text-decoration: underline; }
+.cart-disc:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.c-open { all: unset; cursor: pointer; display: grid; gap: 4px; border-radius: 4px; }
+.c-open:hover .c-title, .c-open:focus-visible .c-title { text-decoration: underline; }
+.c-open:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ficha del disco */
+.disc { border: 0; padding: 0; border-radius: 16px; width: min(720px, calc(100% - 24px)); max-height: calc(100vh - 32px); color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); }
+.disc::backdrop { background: rgba(19, 20, 24, 0.6); }
+.disc-box { position: relative; padding: 24px; overflow-y: auto; max-height: inherit; }
+.disc-x { position: absolute; top: 10px; right: 12px; background: none; border: 0; font-size: 1.2rem; cursor: pointer; padding: 6px; color: var(--muted); }
+#disc-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; }
+.disc-cover { position: relative; width: 240px; aspect-ratio: 1; border-radius: 6px; overflow: hidden;
+  background: radial-gradient(circle, var(--ink) 0 2%, var(--accent) 2.5% 17%, #08090c 17.5% 18.5%, transparent 19%),
+              repeating-radial-gradient(circle, #08090c 0 2px, #202228 2px 4px); }
+.disc-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.disc-cover .sticker { position: absolute; left: 8px; bottom: 8px; }
+.disc-info h2 { font-size: 1.9rem; padding-right: 28px; }
+.disc-artist { font-weight: 700; font-size: 1.1rem; margin: 4px 0 12px; }
+.disc-price { font-size: 1.5rem; margin-bottom: 14px; }
+.disc-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 18px; font-size: 0.95rem; }
+.disc-facts dt { color: var(--muted); }
+.disc-facts dd { margin: 0; overflow-wrap: anywhere; }
+.disc-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+@media (max-width: 620px) {
+  #disc-body { grid-template-columns: 1fr; }
+  .disc-cover { width: min(240px, 100%); justify-self: center; }
+  .disc-actions .btn { flex: 1; }
+}
 .empty h3 { margin-bottom: 8px; }
 
 .pager { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 20px; }

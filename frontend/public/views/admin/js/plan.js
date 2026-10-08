@@ -49,6 +49,14 @@ async function showPremium(reason = "") {
   }
 }
 $("plan-bar").onclick = e => { if (e.target.id === "go-premium") showPremium(); };
+// recién creada eligiendo Premium: se le explica en qué está su pedido (una sola vez)
+function welcomePremium() {
+  if (new URLSearchParams(location.search).get("bienvenida") !== "premium") return;
+  history.replaceState(null, "", location.pathname);
+  Swal.fire({ icon: "success", title: "¡Tu tienda está lista!", confirmButtonText: "Empezar",
+    text: "Elegiste Premium: ya recibimos tu pedido y te contactamos en las próximas horas para el pago. Mientras tanto, tu tienda funciona en el plan Gratis: podés cargar hasta 50 discos y armarla." });
+}
+
 // botones "Pasate a Premium" de los paneles bloqueados
 document.addEventListener("click", e => { if (e.target.closest("[data-premium]")) showPremium(); });
 

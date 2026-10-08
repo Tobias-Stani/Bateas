@@ -65,6 +65,9 @@ textarea.field { resize: vertical; font: inherit; }
 .stats-title { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
 .notice { border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; background: #fdf1d8; color: #7a5300; }
 .notice.bad { background: #f7e1e0; color: var(--red); }
+/* al cambiar de pestaña la página no se encoge de golpe (si no, el navegador salta para arriba) */
+#tab-tenants, #tab-accounts, #tab-payments, #tab-activity { min-height: 100vh; }
+.tabs { scroll-margin-top: 80px; }  /* queda debajo de la barra fija de arriba */
 .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin: 8px 0 20px; }
 .tabs button { border: 0; background: none; font: inherit; font-weight: 700; padding: 10px 16px; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }

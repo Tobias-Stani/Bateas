@@ -158,6 +158,9 @@ document.querySelector(".tabs").onclick = e => {
   if (!tab) return;
   document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   for (const name of ["tenants", "accounts", "payments", "activity"]) $(`tab-${name}`).hidden = name !== tab;
+  // si estabas más abajo que las pestañas, la vista queda en las pestañas, no al principio de la página
+  const tabs = document.querySelector(".tabs");
+  if (tabs.getBoundingClientRect().top < 80) tabs.scrollIntoView({ block: "start" });
   if (tab === "accounts") loadAccounts();
   if (tab === "payments") loadPayments();
   if (tab === "activity") loadEvents(true);
@@ -169,14 +172,21 @@ async function loadAccounts() {
   try { accounts = await api("/api/super/accounts"); } catch (err) { return handle(err); }
   renderAccounts();
 }
+// la tienda de una cuenta con su plan; "Pidió Premium" si lo pidió y todavía no está activo
+function storeWithPlan(slug) {
+  const t = tenants.find(x => x.slug === slug);
+  const asked = t && t.plan_now !== "premium" && (stats.premium_requests || []).some(r => r.slug === slug);
+  return `<a href="#" data-open="${esc(slug)}">${esc(nameOf(slug))}</a> ${t ? planLabel(t) : ""}${asked ? ' <span class="chip suspended">Pidió Premium</span>' : ""}`;
+}
 function renderAccounts() {
   const q = $("acc-q").value.trim().toLowerCase();
   const shown = accounts.filter(a => !q || `${a.email} ${a.name}`.toLowerCase().includes(q));
   const withStore = accounts.filter(a => a.stores).length;
-  $("acc-hint").textContent = `${num(accounts.length)} ${accounts.length === 1 ? "cuenta" : "cuentas"} · ${num(withStore)} con tienda · ${num(accounts.length - withStore)} se registraron pero todavía no crearon su tienda.`;
+  const premium = accounts.filter(a => (a.stores || "").split(",").some(slug => tenants.find(t => t.slug === slug && t.plan_now === "premium"))).length;
+  $("acc-hint").textContent = `${num(accounts.length)} ${accounts.length === 1 ? "cuenta" : "cuentas"} · ${num(withStore)} con tienda · ${num(premium)} Premium · ${num(accounts.length - withStore)} se registraron pero todavía no crearon su tienda.`;
   $("acc-rows").innerHTML = shown.length ? shown.map(a => `<tr>
     <td><b>${esc(a.email)}</b></td><td>${esc(a.name)}</td>
-    <td>${a.stores ? a.stores.split(",").map(slug => `<a href="#" data-open="${esc(slug)}">${esc(nameOf(slug))}</a>`).join("<br>") : "<small>Sin tienda todavía</small>"}</td>
+    <td>${a.stores ? a.stores.split(",").map(storeWithPlan).join("<br>") : "<small>Sin tienda todavía</small>"}</td>
     <td>${esc(when(a.created_at))}</td><td>${esc(when(a.last_login_at))}</td>
     <td>${a.status === "active" ? "Activa" : '<span class="what bad">Bloqueada</span>'}</td></tr>`).join("")
     : `<tr><td colspan="6" class="hint" style="padding:28px;text-align:center">${accounts.length ? "Nada coincide con la búsqueda." : "Todavía nadie se registró con Google."}</td></tr>`;
@@ -284,9 +294,11 @@ $("create-form").onsubmit = async e => {
 };
 
 // --- detalle ---
+let listScroll = 0;  // dónde estabas en la lista, para volver ahí
 function openDetail(slug) {
   current = tenants.find(t => t.slug === slug);
   if (!current) return;
+  listScroll = scrollY;
   $("list-view").hidden = true; $("detail-view").hidden = false;
   $("create").hidden = true;
   $("brand-error").textContent = "";
@@ -341,7 +353,12 @@ function replaceCurrent(t) {
   tenants = tenants.map(x => x.slug === t.slug ? t : x);
   current = t;
 }
-$("back").onclick = () => { $("detail-view").hidden = true; $("list-view").hidden = false; current = null; renderList(); };
+$("back").onclick = () => {
+  $("detail-view").hidden = true; $("list-view").hidden = false; current = null;
+  renderList(); renderStats();
+  if (!$("tab-accounts").hidden) renderAccounts();
+  scrollTo(0, listScroll);
+};
 
 $("brand-form").oninput = () => { $("brand-error").textContent = ""; };
 $("brand-form").onsubmit = async e => {

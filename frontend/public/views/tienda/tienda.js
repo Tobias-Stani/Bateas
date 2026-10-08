@@ -21,8 +21,9 @@ function renderCart() {
     : `${unpriced.length} discos no tienen precio: quitalos para pagar online, o consultá por WhatsApp.`;
   $("wa").textContent = BRAND.payments ? "Consultar por WhatsApp" : "Consultar cotización";
   $("empty").hidden = !cart.length;
+  remember(cart);
   $("cart-items").innerHTML = cart.map((d, i) => `
-    <li><span><span class="sticker">#${d.id}</span> <b>${esc(d.artist)}</b><small>${esc(d.title)}, ${esc(fmt(d))}${d.price ? ` · ${esc(fmtPrice(d.price))}` : ""}</small></span>
+    <li><button class="cart-disc" data-disc="${d.id}" aria-label="Ver ficha de ${esc(d.title)}"><span class="sticker">#${d.id}</span> <b>${esc(d.artist)}</b><small>${esc(d.title)}, ${esc(fmt(d))}${d.price ? ` · ${esc(fmtPrice(d.price))}` : ""}</small></button>
     <button class="btn-text danger" data-rm="${i}" aria-label="Quitar ${esc(d.title)}">Quitar</button></li>`).join("");
 }
 
@@ -98,13 +99,13 @@ function startHero(hi) {
 
 // tarjeta de un disco: la usan las secciones y el catálogo; addAttr dice a qué lista pertenece el botón
 function card(d, addAttr) {
+  known.set(d.id, d);
   const on = inCart(d);
   const meta = [fmt(d), [d.label, d.genre].filter(Boolean).join(" — "), d.origin, ...Object.entries(d.extra || {}).map(([k, v]) => `${k}: ${v}`)].filter(Boolean);
   return `<article class="card ${on ? "in" : ""}">
     <div class="sleeve" data-sleeve="${d.id}"><img alt=""><span class="sticker">#${d.id}</span>
       <button class="card-play" data-listen="${d.id}" data-artist="${esc(d.artist)}" data-title="${esc(d.title)}" aria-label="Escuchar ${esc(d.title)}" ${albums.has(d.id) ? "" : "hidden"}>▶</button></div>
-    <div class="c-artist">${esc(d.artist)}</div>
-    <div class="c-title">${esc(d.title)}</div>
+    <button class="c-open" data-disc="${d.id}"><span class="c-artist">${esc(d.artist)}</span><span class="c-title">${esc(d.title)}</span></button>
     ${d.price ? `<span class="price">${esc(fmtPrice(d.price))}</span>` : ""}
     <div class="c-meta">${meta.map(esc).join("<br>")}</div>
     <a class="c-yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(cleanArtist(d.artist) + " " + cleanTitle(d.title))}" target="_blank" rel="noopener">Buscar en YouTube</a>
@@ -330,6 +331,3 @@ $("copy").onclick = async () => {
 };
 $("cart-bar").onclick = () => $("cart").classList.add("open");
 $("close-cart").onclick = () => $("cart").classList.remove("open");
-
-brandReady.then(ok => ok && loadEstado().then(openStore).catch(e => e.status === 401 || e.status === 403 ? lockOut(e)
-  : Swal.fire({ icon: "error", title: "No se pudo cargar la tienda", text: e.message })));

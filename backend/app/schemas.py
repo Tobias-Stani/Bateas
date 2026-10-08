@@ -27,6 +27,7 @@ class NewTenant(BaseModel):
 class NewStore(BaseModel):
     name: str
     slug: str
+    plan: str = "free"  # "premium": se crea en Gratis y queda el pedido de Premium
 
 
 class TenantPatch(BaseModel):

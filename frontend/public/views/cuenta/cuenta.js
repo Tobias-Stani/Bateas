@@ -34,20 +34,26 @@ function renderGoogleButton() {
 googleReady = new Promise(resolve => { window.onGoogleLibraryLoad = resolve; });
 
 // --- alta de la tienda ---
+// plan: viene elegido desde la landing con /cuenta?plan=premium; si no, Gratis
+const chosenPlan = () => document.querySelector('input[name="plan"]:checked').value;
+if (new URLSearchParams(location.search).get("plan") === "premium") document.querySelector('input[value="premium"]').checked = true;
+const syncPlan = () => { $("plan-hint").hidden = chosenPlan() !== "premium"; };
+document.querySelectorAll('input[name="plan"]').forEach(r => r.onchange = syncPlan);
+syncPlan();
 let slugTouched = false;
 $("s-origin").textContent = `${location.host}/`;
 $("s-name").oninput = () => { $("store-error").textContent = ""; if (!slugTouched) $("s-slug").value = slugify($("s-name").value); };
 $("s-slug").oninput = () => { $("store-error").textContent = ""; slugTouched = true; $("s-slug").value = $("s-slug").value.toLowerCase().replace(/[^a-z0-9-]/g, ""); };
 $("store-form").onsubmit = async e => {
   e.preventDefault();
-  const body = { name: $("s-name").value, slug: $("s-slug").value };
+  const body = { name: $("s-name").value, slug: $("s-slug").value, plan: chosenPlan() };
   if (body.name.trim().length < 2) return ($("store-error").textContent = "Escribí el nombre de tu disquería.");
   if (body.slug.length < 2) return ($("store-error").textContent = "La dirección tiene que tener al menos 2 caracteres.");
   const btn = e.submitter;
   setBusy(btn, true, "Creando tu tienda…");
   try {
     const t = await api("/api/cuenta/tiendas", { method: "POST", body });
-    location.href = `/${t.slug}/admin`;
+    location.href = `/${t.slug}/admin${t.plan_requested === "premium" ? "?bienvenida=premium" : ""}`;
   } catch (err) {
     setBusy(btn, false);
     if (err.status === 401) return start();

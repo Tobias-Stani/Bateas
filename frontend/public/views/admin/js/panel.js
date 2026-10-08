@@ -75,6 +75,7 @@ async function openPanel() {
   renderDiscogs();
   renderMp();
   renderPlan();
+  welcomePremium();
   loadTable();
   loadSections().then(loadHome);  // el formulario del banner lista las secciones
 }

@@ -254,7 +254,7 @@ Antes de subir: tests en verde. Después: abrí la landing y `/super` para confi
 
 ## Pendientes
 
-- [ ] Poner el WhatsApp y el mail reales en la landing (`views/landing/index.html`, marcados con `TODO`).
+- [ ] Poner el mail real en la landing (el WhatsApp ya está) (`views/landing/index.html`, marcados con `TODO`).
 - [ ] Inicializar git y subir el repo (hoy el proyecto no tiene historial de versiones).
 - [x] Separar el JavaScript del admin en módulos (`views/admin/js/`).
 - [ ] Backups periódicos del volumen de Railway.

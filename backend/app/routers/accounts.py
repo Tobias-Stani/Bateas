@@ -8,7 +8,7 @@ from ..config import GOOGLE_CLIENT_ID
 from ..dependencies import require_account
 from ..schemas import NewStore, Secret
 from ..security import clear_account_cookie, set_account_cookie
-from ..services import accounts, audit, tenants
+from ..services import accounts, audit, plans, tenants
 
 router = APIRouter(prefix="/api/cuenta", tags=["cuenta"])
 
@@ -43,8 +43,12 @@ def logout(response: Response):
 @router.post("/tiendas")
 def create_store(body: NewStore, account: dict = Depends(require_account)):
     accounts.check_can_create(account)
-    name, slug = validators.tenant_name(body.name), validators.slug(body.slug)
+    name, slug, plan = validators.tenant_name(body.name), validators.slug(body.slug), validators.plan(body.plan)
     # entra con Google: la contraseña del admin queda al azar (el super admin puede darle una si la pide)
     t = tenants.create(name, slug, secrets.token_urlsafe(16), secrets.token_urlsafe(6), owner_id=account["id"], public=True)
-    audit.log(slug, "account", "tenant_created", name=name, account=account["id"], email=account["email"], source="registro")
-    return {"slug": t["slug"], "name": t["name"]}
+    audit.log(slug, "account", "tenant_created", name=name, account=account["id"], email=account["email"], source="registro", plan=plan)
+    if plan == "premium":
+        # ponytail: sin suscripción automática todavía, Premium arranca como pedido; con la suscripción, acá va el pago
+        plans.request_premium(t)
+        audit.log(slug, "account", "premium_requested", email=account["email"], source="registro")
+    return {"slug": t["slug"], "name": t["name"], "plan_requested": plan}

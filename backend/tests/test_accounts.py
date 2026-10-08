@@ -46,6 +46,17 @@ def test_sign_up_creates_a_free_public_store_owned_by_the_account(google, boss):
     assert any(a["email"] == "ana@gmail.com" and a["stores"] == "disqueria-ana" for a in boss.get("/api/super/accounts").json())
 
 
+def test_choosing_premium_at_sign_up_leaves_the_request(google, boss):
+    c, _ = login("eli")
+    r = c.post("/api/cuenta/tiendas", json={"name": "Eli Discos", "slug": "eli-discos", "plan": "premium"})
+    assert r.json()["plan_requested"] == "premium"
+    plan = c.get("/api/t/eli-discos/admin/status").json()["plan"]
+    assert plan["plan"] == "free" and plan["requested_at"]  # arranca en Gratis, con el pedido hecho
+    assert any(p["slug"] == "eli-discos" for p in boss.get("/api/super/stats").json()["premium_requests"])
+    other, _ = login("fede")
+    assert other.post("/api/cuenta/tiendas", json={"name": "X", "slug": "fede-x", "plan": "oro"}).status_code == 400
+
+
 def test_second_login_is_the_same_account(google):
     _, first = login("carla")
     _, again = login("carla")

@@ -33,10 +33,21 @@
       <label for="s-slug">Tu dirección</label>
       <div class="prefix"><span id="s-origin"></span><input id="s-slug" class="field" maxlength="40" autocomplete="off" spellcheck="false" placeholder="el-surco" required aria-describedby="s-slug-hint"></div>
       <p id="s-slug-hint" class="hint" style="margin-top:6px">Es el link que vas a compartir con tus clientes. Letras, números y guiones.</p>
+      <fieldset class="plans">
+        <legend>Elegí tu plan</legend>
+        <label class="plan-option">
+          <input type="radio" name="plan" value="free" checked>
+          <span><b>Gratis</b> <em>$ 0</em><small>Hasta 50 discos, 1 banner y 1 sección. Pedidos por WhatsApp.</small></span>
+        </label>
+        <label class="plan-option">
+          <input type="radio" name="plan" value="premium">
+          <span><b>Premium</b> <em>$ 11.999 por mes</em><small>Discos, banners y secciones sin límite. Importación desde Discogs.</small></span>
+        </label>
+      </fieldset>
+      <p id="plan-hint" class="plan-note" hidden>Tu tienda se crea ya mismo y la podés usar en Gratis mientras activamos Premium: te contactamos en las próximas horas para el pago.</p>
       <p id="store-error" class="error" role="alert"></p>
       <button class="btn">Crear mi tienda</button>
     </form>
-    <p class="plan-note">Arranca en el plan <b>Gratis</b>: hasta 50 discos, 1 banner y 1 sección. Cuando quieras, pasate a <b>Premium</b> y no tenés límites.</p>
     <button class="logout" data-logout>Salir</button>
   </section>
 
