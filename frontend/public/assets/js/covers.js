@@ -46,12 +46,26 @@ function matchesTogether(text, album) {
   return !!(t && da && dt && t.includes(da) && t.includes(dt));
 }
 
+// lo que describe la edición y no el disco: confunde a la búsqueda de Deezer
+const EDITION = /\b(limitad[oa]|edici[oó]n|reedici[oó]n|remaster(izado)?|deluxe|vinilo|vinyl|lp|2lp|cd|color|blanco|negro|rojo|azul|transparente|importado|nacional)\b/gi;
+
 async function findCover(d) {
   if (!d.artist) {
-    const text = cleanTitle(d.title);
-    const res = await jsonp(`https://api.deezer.com/search/album?limit=5&q=${encodeURIComponent(text)}`);
+    // de lo más completo a lo más corto: el texto, lo que va antes del guion, y sin palabras de edición
+    const text = cleanTitle(d.title), main = text.split(/\s[-–]\s/)[0];
+    const queries = [...new Set([text, main, main.replace(EDITION, " ").replace(/\s+/g, " ").trim()])].filter(Boolean);
+    for (const q of queries) {
+      const res = await jsonp(`https://api.deezer.com/search/album?limit=5&q=${encodeURIComponent(q)}`);
+      if (res.error) throw new Error(res.error.message);
+      const hit = (res.data || []).find(album => matchesTogether(q, album));
+      if (hit) return hit;
+    }
+    // último intento: la búsqueda general (temas) encuentra álbumes que la de álbumes se pierde ("Soda Stereo Signos")
+    const q = queries[queries.length - 1];
+    const res = await jsonp(`https://api.deezer.com/search?limit=15&q=${encodeURIComponent(q)}`);
     if (res.error) throw new Error(res.error.message);
-    return (res.data || []).find(album => matchesTogether(text, album)) || null;
+    const track = (res.data || []).find(t => t.album && matchesTogether(q, { ...t.album, artist: t.artist }));
+    return track ? { ...track.album, artist: track.artist } : null;
   }
   const artist = cleanArtist(d.artist), title = cleanTitle(d.title);
   const upc = String(d.barcode || "").replace(/\D/g, "");
