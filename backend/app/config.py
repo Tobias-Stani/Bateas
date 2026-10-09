@@ -53,13 +53,15 @@ FIELDS = {
     "media": ["formato", "format", "medium", "media", "soporte"],
     "description": ["descripcion", "description", "detalle", "detalles", "notas", "observaciones"],
     "genre": ["genero", "genre", "estilo", "style"],
-    "price": ["precio", "price", "valor", "importe", "pvp"],
+    "price": ["precio", "price", "valor", "importe", "pvp", "efectivo", "contado", "transfer", "transferencia"],
     "origin": ["origen", "origin", "pais", "country", "procedencia"],
     "barcode": ["barcode", "codigo de barras", "cod barras", "ean", "upc"],
 }
 # columnas sin campo fijo: propia de la disquería (se guarda con su nombre), a la descripción, o se descarta
 CUSTOM, EXTRA, IGNORE = "custom", "extra", "ignore"
-KINDS = {CUSTOM, EXTRA, IGNORE}
+# "ARTISTA / TITULO" en una sola columna, sin separador fijo: se guarda entero como título (partirlo sería adivinar)
+ARTIST_TITLE = "artist_title"
+KINDS = {CUSTOM, EXTRA, IGNORE, ARTIST_TITLE}
 HEADER_SCAN = 15  # el encabezado puede venir debajo de un logo o un título
 
 # --- Discogs ---

@@ -2,7 +2,7 @@
 
 // --- carga del Excel: vista previa de columnas -> confirmación ---
 const FIELD_LABELS = {
-  artist: "Artista", title: "Título / álbum", label: "Sello", media: "Formato", description: "Descripción",
+  artist: "Artista", title: "Título / álbum", artist_title: "Artista y título juntos", label: "Sello", media: "Formato", description: "Descripción",
   genre: "Género", price: "Precio", origin: "Origen", barcode: "Código de barras",
   custom: "Columna propia (con su nombre)", extra: "Agregar a la descripción", ignore: "No usar",
 };
@@ -44,8 +44,11 @@ function renderMapping() {
 function checkMapping() {
   const used = plan.columns.map(c => c.field).filter(f => !["custom", "extra", "ignore"].includes(f));
   const dup = used.find((f, i) => used.indexOf(f) !== i);
+  const together = used.includes("artist_title");
   const error = dup ? `Hay dos columnas marcadas como "${FIELD_LABELS[dup]}". Dejá una sola.`
-    : !used.includes("artist") ? "Elegí qué columna es el artista."
+    : together && (used.includes("artist") || used.includes("title")) ? "Si artista y título vienen juntos en una columna, no marques otra como artista o título."
+    : together ? ""
+    : !used.includes("artist") ? "Elegí qué columna es el artista (o, si viene junto con el título, marcala como \"Artista y título juntos\")."
     : !used.includes("title") ? "Elegí qué columna es el título."
     : "";
   $("mapping-error").textContent = error;

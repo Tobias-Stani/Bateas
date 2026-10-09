@@ -40,7 +40,19 @@ function jsonp(url) {
   });
 }
 
+// "2 Minutos 20 Años No Es Nada (2LP)": sin artista aparte, el texto tiene que contener al artista y al álbum de Deezer
+function matchesTogether(text, album) {
+  const t = norm(text), da = norm(album.artist?.name), dt = norm(album.title);
+  return !!(t && da && dt && t.includes(da) && t.includes(dt));
+}
+
 async function findCover(d) {
+  if (!d.artist) {
+    const text = cleanTitle(d.title);
+    const res = await jsonp(`https://api.deezer.com/search/album?limit=5&q=${encodeURIComponent(text)}`);
+    if (res.error) throw new Error(res.error.message);
+    return (res.data || []).find(album => matchesTogether(text, album)) || null;
+  }
   const artist = cleanArtist(d.artist), title = cleanTitle(d.title);
   const upc = String(d.barcode || "").replace(/\D/g, "");
   if (upc.length >= 8 && !/^(\d)\1+$/.test(upc)) {  // "000000000000" es relleno, no un código

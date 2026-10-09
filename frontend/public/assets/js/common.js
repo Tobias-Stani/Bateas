@@ -54,7 +54,9 @@ document.addEventListener("keydown", e => {
 // mensaje de pedido a partir de las plantillas del admin; lo usan la tienda y la vista previa
 const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (m, k) => k in vars ? String(vars[k] ?? "") : m);
 // un campo vacío no deja "()", "[]" ni espacios dobles
-const tidy = s => s.replace(/([(\[])\s+|\s+([)\]])/g, "$1$2").replace(/\(\)|\[\]/g, "").replace(/[ \t]{2,}/g, " ").trim();
+const tidy = s => s.replace(/([(\[])\s+|\s+([)\]])/g, "$1$2").replace(/\(\)|\[\]/g, "")
+  .replace(/\s[-–]\s*(?=[-–(\[]|$)/g, " ")  // guion que quedó sin nada a un lado (un dato vacío): "#2 - – Título" -> "#2 – Título"
+  .replace(/[ \t]{2,}/g, " ").trim();
 // "75000" -> "$ 75.000"; si el Excel ya trae texto ("USD 40") se deja como está
 const fmtPrice = p => /^\d+(\.\d+)?$/.test(p || "") ? `$ ${Number(p).toLocaleString("es-AR")}` : (p || "");
 // columnas propias de la disquería como variables: {insert} -> d.extra["Insert"]

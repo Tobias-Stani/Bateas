@@ -19,7 +19,7 @@ function renderDisc() {
     <div class="disc-cover ${cover ? "has-cover" : ""}">${cover ? `<img src="${esc(cover)}" alt="Tapa de ${esc(d.title)}">` : ""}<span class="sticker">#${d.id}</span></div>
     <div class="disc-info">
       <h2 id="disc-title">${esc(d.title)}</h2>
-      <p class="disc-artist">${esc(d.artist)}</p>
+      ${d.artist ? `<p class="disc-artist">${esc(d.artist)}</p>` : ""}
       ${d.price ? `<p class="price disc-price">${esc(fmtPrice(d.price))}</p>` : `<p class="hint">Precio a consultar con la disquería.</p>`}
       ${facts.length ? `<dl class="disc-facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : ""}
       <div class="disc-actions">

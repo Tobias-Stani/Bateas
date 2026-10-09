@@ -7,7 +7,7 @@ from itertools import islice
 from fastapi import HTTPException
 from openpyxl import load_workbook
 
-from ..config import CUSTOM, EXTRA, FIELDS, HEADER_SCAN, IGNORE, KINDS, PAGE_SIZE
+from ..config import ARTIST_TITLE, CUSTOM, EXTRA, FIELDS, HEADER_SCAN, IGNORE, KINDS, PAGE_SIZE
 from ..db import db
 
 
@@ -62,6 +62,9 @@ def custom_key(name):
 
 def guess(header):
     h = f" {norm(header)} "
+    words = lambda field: any(f" {w} " in h for w in FIELDS[field])
+    if words("artist") and words("title"):
+        return ARTIST_TITLE  # "Artista / Título": las dos cosas en la misma columna
     for field, words in FIELDS.items():
         if any(f" {w} " in h for w in words):
             return field
@@ -97,7 +100,7 @@ def detect(path, saved):
         name = header[i] if i < len(header) else ""
         values = [r[i] for r in samples if i < len(r) and r[i]]
         field = saved.get(norm(name)) or guess(name)
-        if field in FIELDS and field in used:
+        if (field in FIELDS or field == ARTIST_TITLE) and field in used:
             field = None  # cada campo una sola vez: gana la primera columna
         if field not in FIELDS and field not in KINDS:
             field = CUSTOM if name and values else IGNORE
@@ -113,6 +116,7 @@ def read_discs(path, header_row, mapping):
     header = [cell(v) for v in next(islice(rows, header_row - 1, None), [])]
     name = lambda i: (header[i] if i < len(header) else "") or f"Columna {column_letter(i)}"
     fields = {i: f for i, f in mapping.items() if f in FIELDS}
+    together = next((i for i, f in mapping.items() if f == ARTIST_TITLE), None)
     extras = [i for i, f in mapping.items() if f == EXTRA]
     customs = [i for i, f in mapping.items() if f == CUSTOM]
     out = []
@@ -120,6 +124,8 @@ def read_discs(path, header_row, mapping):
     for n, row in enumerate(rows, start=header_row + 1):
         value = lambda i: cell(row[i]) if i < len(row) else ""
         rec = {f: value(i) for i, f in fields.items()}
+        if together is not None:
+            rec["title"] = value(together)  # el texto entero; el artista queda vacío y la tienda muestra el título
         if not (rec.get("artist") or rec.get("title")):
             continue
         # columnas extra ("Insert: Sí") van a la descripción
@@ -133,13 +139,16 @@ def read_discs(path, header_row, mapping):
 
 
 def validate_plan(header_row, mapping):
-    chosen = [f for f in mapping.values() if f in FIELDS]
+    chosen = [f for f in mapping.values() if f in FIELDS or f == ARTIST_TITLE]
     if any(f not in FIELDS and f not in KINDS for f in mapping.values()):
         raise HTTPException(400, "Hay una columna con un campo desconocido.")
     if len(chosen) != len(set(chosen)):
         raise HTTPException(400, "Hay dos columnas asignadas al mismo campo.")
-    if "artist" not in chosen or "title" not in chosen:
-        raise HTTPException(400, "Elegí qué columna es el artista y cuál el título.")
+    if ARTIST_TITLE in chosen:
+        if "artist" in chosen or "title" in chosen:
+            raise HTTPException(400, "Si artista y título vienen juntos, no marques otra columna como artista o título.")
+    elif "artist" not in chosen or "title" not in chosen:
+        raise HTTPException(400, "Elegí qué columna es el artista y cuál el título, o la columna con los dos juntos.")
     if not 1 <= header_row <= HEADER_SCAN:
         raise HTTPException(400, "La fila de encabezados no es válida.")
 
